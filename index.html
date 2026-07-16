@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Ujian SMAN 1 Jakarta</title>
-    
+    <title>Portal Ujian Modern, Scheduler & Auto Regenerate Token</title>
     <link rel="icon" type="image/png" href="favicon.png">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,14 +20,14 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
         body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
-        .container { width: 100%; max-width: 820px; background: var(--bg-card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
+        .container { width: 100%; max-width: 850px; background: var(--bg-card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
         .container.fullscreen { max-width: 100% !important; height: 100vh !important; border-radius: 0 !important; padding: 0 !important; border: none !important; display: flex; flex-direction: column; }
         h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; text-align: center; }
         .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; text-align: center; }
         h3 { font-size: 20px; font-weight: 600; margin-bottom: 20px; text-align: center; }
         .form-group { text-align: left; margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
-        input[type="text"], input[type="password"], input[type="datetime-local"], select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background-color: #f8fafc; outline: none; }
+        input[type="text"], input[type="password"], input[type="datetime-local"], input[type="number"], select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background-color: #f8fafc; outline: none; }
         input:focus, select:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
         
         .btn { padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
@@ -49,11 +47,11 @@
         .admin-section.active { display: block; }
 
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; border-radius: 12px; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 750px; }
         th, td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--border); }
         th { background-color: #f8fafc; font-weight: 700; }
         .text-left { text-align: left; }
-        .flex-btn-group { display: flex; gap: 6px; justify-content: center; }
+        .flex-btn-group { display: flex; gap: 4px; justify-content: center; }
 
         #examArea { width: 100%; flex-grow: 1; flex-direction: column; }
         iframe { width: 100%; height: 100%; border: none; flex-grow: 1; }
@@ -65,8 +63,8 @@
 <div class="container" id="mainContainer">
     
     <div id="loginArea">
-        <h2>Portal Ujian SMAN 1 Jakarta</h2>
-        <p class="subtitle">Silakan masuk untuk memulai ujian</p>
+        <h2>Portal Ujian Online</h2>
+        <p class="subtitle">Silakan masuk untuk memulai ujian atau manajemen sistem</p>
         <form id="loginForm">
             <div class="form-group">
                 <label>Username / NISN</label>
@@ -85,15 +83,21 @@
     <div id="menuArea">
         <h3>Dashboard Peserta</h3>
         <div style="background: rgba(79, 70, 229, 0.05); border: 1px dashed var(--primary); padding: 14px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-            Selamat datang, <strong id="namaSiswa" style="color:var(--primary);">Siswa</strong>! (Kelas: <strong id="kelasSiswaBadge">-</strong>)
+            Selamat datang, <strong id="namaSiswa" style="color:var(--primary);">Siswa</strong>! (Kelas: <strong id="kelasSiswaBadge">-</strong> | Tingkat: <strong id="tingkatSiswaBadge">-</strong>)
         </div>
         
         <div class="form-group">
-            <label>Pilih Mata Ujian yang Aktif:</label>
+            <label>Pilih Mata Ujian yang Tersedia untuk Kelas Anda:</label>
             <select id="selectUjianSiswa"><option value="">-- Tidak ada ujian aktif saat ini --</option></select>
         </div>
 
-        <button class="btn btn-primary" id="btnMulaiUjian" style="width:100%">Mulai Ujian Terpilih</button>
+        <div class="form-group" id="boxTokenSiswa" style="display:none; background:#f1f5f9; padding:12px; border-radius:10px;">
+            <label style="color:var(--danger)">🔑 Ujian ini memerlukan Token Dinamis Aktif:</label>
+            <input type="text" id="inputTokenSiswa" placeholder="Masukkan Token 6 Digit Terbaru" style="background:white;" maxlength="6">
+            <small style="color:var(--text-muted); display:block; margin-top:4px;">*Token otomatis berganti berkala. Minta token terbaru pada pengawas ruangan.</small>
+        </div>
+
+        <button class="btn btn-primary" id="btnMulaiUjian" style="width:100%; margin-top:10px;">Mulai Ujian Terpilih</button>
         <button class="btn btn-success" id="btnLihatNilai" style="width:100%; margin-top:10px;">Lihat Rilis Nilai</button>
         <div id="infoBelumRilis" style="background:#fffbeb; color:#b45309; padding:12px; border-radius:10px; margin-top:12px; font-size:14px; border:1px solid #fef3c7;">
             ℹ️ Catatan: Rekapitulasi nilai Anda belum dirilis oleh Guru.
@@ -115,7 +119,7 @@
 
     <div id="adminArea">
         <h3>⚙️ Administrator Panel</h3>
-        <p class="subtitle">Manajemen distribusi lembar soal, scheduler, dan rilis nilai</p>
+        <p class="subtitle">Manajemen Lembar Soal, Filter Tingkatan, Auto Token Regenerate & Scheduler</p>
         
         <div class="admin-nav">
             <div class="nav-item active" onclick="switchAdminTab('sectionSoal', this)">1. Manajemen Soal & Jadwal</div>
@@ -124,38 +128,55 @@
 
         <div id="sectionSoal" class="admin-section active">
             <div class="form-group" style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                <label style="font-size:15px; margin-bottom:10px; display: block;">➕ Tambahkan Mata Ujian Baru & Konfigurasi Prefill</label>
+                <label style="font-size:15px; margin-bottom:10px; display: block; font-weight:700;">➕ Tambahkan Mata Ujian Baru</label>
                 <input type="text" id="addNamaUjian" placeholder="Nama Ujian (Contoh: UTS Pancasila)" style="margin-bottom:10px; background:white;">
                 <input type="text" id="addUrlUjian" placeholder="Link Bersih Google Form (Berakhiran /viewform)" style="margin-bottom:10px; background:white;">
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="addEntryNama" placeholder="ID Entry Nama GForm" style="background:white;">
+                    <input type="text" id="addEntryKelas" placeholder="ID Entry Kelas GForm" style="background:white;">
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
                     <div>
-                        <label style="font-size:12px; color:var(--text-muted)">ID Entry Nama GForm:</label>
-                        <input type="text" id="addEntryNama" placeholder="Contoh: entry.148293048" style="background:white;">
+                        <label>Target Kelas:</label>
+                        <select id="addTargetTingkat" style="background:white;"><option value="X">Kelas X</option><option value="XI">Kelas XI</option><option value="XII">Kelas XII</option></select>
                     </div>
                     <div>
-                        <label style="font-size:12px; color:var(--text-muted)">ID Entry Kelas GForm:</label>
-                        <input type="text" id="addEntryKelas" placeholder="Contoh: entry.883729401" style="background:white;">
+                        <label>Teks Kuis Kunci (Secret Key):</label>
+                        <input type="text" id="addSecretKey" placeholder="Contoh: KUNCIUTS" style="background:white;">
+                    </div>
+                    <div>
+                        <label>Durasi Token (Menit):</label>
+                        <input type="number" id="addDurasi" value="5" min="1" style="background:white;">
                     </div>
                 </div>
                 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div class="form-group">
-                        <label>Rilis Manual Langsung?</label>
-                        <select id="addStatusSoal" style="background:white;"><option value="TIDAK">TIDAK (Gunakan Timer)</option><option value="YA">YA (Langsung Tampil)</option></select>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                    <div>
+                        <label>Rilis Soal?</label>
+                        <select id="addStatusSoal" style="background:white;"><option value="TIDAK">TIDAK (Timer)</option><option value="YA">YA (Langsung)</option></select>
                     </div>
-                    <div class="form-group">
-                        <label>Atur Timer / Jadwal Rilis:</label>
+                    <div>
+                        <label>Status Token?</label>
+                        <select id="addStatusToken" style="background:white;"><option value="AKTIF">AKTIF</option><option value="NONAKTIF">NONAKTIF</option></select>
+                    </div>
+                    <div>
+                        <label>Timer Schedule:</label>
                         <input type="datetime-local" id="addJadwalTampil" style="background:white;">
                     </div>
                 </div>
-                <button class="btn btn-success" id="btnTambahUjian" style="width:100%">Simpan Mata Ujian</button>
+                <button class="btn btn-success" id="btnTambahUjian" style="width:100%; margin-top:14px;">Simpan Mata Ujian</button>
             </div>
             
-            <label style="margin-top:20px; display:block; font-weight:700;">Daftar Kontrol Ujian Aktif:</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px;">
+                <label style="font-weight:700;">Daftar Kontrol Ujian Aktif di Cloud:</label>
+                <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()" style="background:#4f46e5;">🔄 Refresh Token Sekarang</button>
+            </div>
+            
             <div class="table-responsive">
                 <table id="tabelDaftarUjian">
-                    <thead><tr><th class="text-left">Nama Ujian / Link</th><th>Status Rilis</th><th>Timer Schedule</th><th>Aksi Kontrol</th></tr></thead>
+                    <thead><tr><th class="text-left">Nama Ujian / Link</th><th>Target</th><th>Soal</th><th>Token Berlaku</th><th>Timer Terjadwal</th><th>Aksi Kontrol</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -228,7 +249,10 @@
                     document.getElementById('menuArea').style.display = 'block';
                     document.getElementById('namaSiswa').innerText = res.nama;
                     document.getElementById('kelasSiswaBadge').innerText = res.kelas;
+                    document.getElementById('tingkatSiswaBadge').innerText = "Kelas " + res.tingkatan;
+                    
                     populateDropdownSiswa(res.daftarUjian);
+                    setupTokenListener();
 
                     if(res.isReleased) {
                         document.getElementById('btnLihatNilai').style.display = 'block';
@@ -245,7 +269,7 @@
     function populateDropdownSiswa(daftarUjian) {
         const select = document.getElementById('selectUjianSiswa');
         if(daftarUjian.length === 0) {
-            select.innerHTML = '<option value="">-- Tidak ada ujian aktif/belum masuk jadwal --</option>';
+            select.innerHTML = '<option value="">-- Tidak ada ujian aktif untuk tingkat kelas Anda --</option>';
             return;
         }
         select.innerHTML = '<option value="">-- Pilih Mata Ujian --</option>';
@@ -255,18 +279,41 @@
         });
     }
 
-    // LOGIKA DINAMIS AUTOFILL MENYESUAIKAN KOLOM INPUT ADMIN
+    function setupTokenListener() {
+        document.getElementById('selectUjianSiswa').addEventListener('change', function() {
+            const selectedIndex = this.selectedIndex;
+            const boxToken = document.getElementById('boxTokenSiswa');
+            document.getElementById('inputTokenSiswa').value = "";
+            
+            if(selectedIndex === 0) { boxToken.style.display = 'none'; return; }
+            
+            const ujianTerpilih = sessionData.daftarUjian[selectedIndex - 1];
+            if(ujianTerpilih.statusToken === "AKTIF") {
+                boxToken.style.display = 'block';
+            } else {
+                boxToken.style.display = 'none';
+            }
+        });
+    }
+
     document.getElementById('btnMulaiUjian').addEventListener('click', function() {
         const selectBox = document.getElementById('selectUjianSiswa');
         const selectedIndex = selectBox.selectedIndex;
         
         if (selectedIndex === 0) { alert("Silakan pilih mata ujian!"); return; }
         
-        const ujianTerpilih = sessionData.daftarUjian[selectedIndex - 1]; 
+        const ujianTerpilih = sessionData.daftarUjian[selectedIndex - 1];
         
-        // Membaca ID entry dinamis dari database sesuai form yang dipilih siswa
-        var idEntryNama = ujianTerpilih.entryNama || "entry.229862433";  
-        var idEntryKelas = ujianTerpilih.entryKelas || "entry.33523970"; 
+        if(ujianTerpilih.statusToken === "AKTIF") {
+            const tokenInput = document.getElementById('inputTokenSiswa').value.trim().toUpperCase();
+            if(tokenInput !== ujianTerpilih.tokenSoal) {
+                alert("⚠️ Token kedaluwarsa atau salah! Silakan minta token dinamis terbaru ke pengawas.");
+                return;
+            }
+        }
+
+        var idEntryNama = ujianTerpilih.entryNama || "entry.123456789";  
+        var idEntryKelas = ujianTerpilih.entryKelas || "entry.987654321"; 
         
         var customFormUrl = ujianTerpilih.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
 
@@ -300,20 +347,28 @@
         tbody.innerHTML = "";
         daftarUjian.forEach(u => {
             let tr = document.createElement('tr');
-            let txtRilis = u.status === 'YA' ? '🟢 Aktif (Dirilis)' : '🔴 Nonaktif';
-            let btnToggle = u.status === 'YA' 
-                ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup</button>`
-                : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
+            let txtSoal = u.status === 'YA' ? '🟢 Aktif' : '🔴 Tutup';
+            let txtToken = u.statusToken === 'AKTIF' ? `🟢 On (<strong style="color:var(--primary); font-size:14px;">${u.tokenSoal}</strong>)` : '🔴 Off';
+            
+            let btnToggleSoal = u.status === 'YA' 
+                ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup Soal</button>`
+                : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis Soal</button>`;
+                
+            let btnToggleToken = u.statusToken === 'AKTIF'
+                ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Matikan Token</button>`
+                : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Aktifkan Token</button>`;
             
             let txtJadwal = u.jadwal ? u.jadwal.replace("T", " ") : "Tanpa Timer";
 
             tr.innerHTML = `
                 <td class="text-left"><strong>${u.nama}</strong><br><small style="color:var(--text-muted)">${u.url}</small></td>
-                <td><span style="font-weight:600">${txtRilis}</span></td>
+                <td><span style="font-weight:600">${txtSoal}</span></td>
+                <td><span style="font-weight:600">${txtToken}</span><br><small style="color:var(--text-muted)">Tiap ${u.durasi} mnt</small></td>
                 <td><small>${txtJadwal}</small></td>
                 <td>
                     <div class="flex-btn-group">
-                        ${btnToggle}
+                        ${btnToggleSoal}
+                        ${btnToggleToken}
                         <button onclick="hapusUjian('${u.idBaris}')" class="btn btn-sm btn-danger">Hapus</button>
                     </div>
                 </td>
@@ -322,7 +377,6 @@
         });
     }
 
-    // INI ADALAH FUNGSI ADD EVENT LISTENER YANG MEMBACA DAN MENGIRIM KEDUA INPUT TERSEBUT
     document.getElementById('btnTambahUjian').addEventListener('click', function() {
         const nama = document.getElementById('addNamaUjian').value.trim();
         const url = document.getElementById('addUrlUjian').value.trim();
@@ -330,45 +384,52 @@
         const jadwal = document.getElementById('addJadwalTampil').value;
         const entryNama = document.getElementById('addEntryNama').value.trim();
         const entryKelas = document.getElementById('addEntryKelas').value.trim();
+        const targetTingkat = document.getElementById('addTargetTingkat').value;
+        const secretKey = document.getElementById('addSecretKey').value.trim();
+        const statusToken = document.getElementById('addStatusToken').value;
+        const durasi = document.getElementById('addDurasi').value || 5;
         
-        if(!nama || !url || !entryNama || !entryKelas) { 
-            alert("Nama, Link Ujian, ID Entry Nama, dan ID Entry Kelas wajib diisi agar Autofill berfungsi!"); 
-            return; 
-        }
+        if(!nama || !url || !entryNama || !entryKelas || !secretKey) { alert("Nama, Link, ID Entry, dan Teks Kunci Rahasia wajib diisi!"); return; }
 
         fetch(WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({ 
-                action: "addUjian", 
-                namaUjian: nama, 
-                urlUjian: url, 
-                statusSoal: status, 
-                jadwalTampil: jadwal,
-                entryNama: entryNama, // Dikirim ke server
-                entryKelas: entryKelas // Dikirim ke server
+                action: "addUjian", namaUjian: nama, urlUjian: url, statusSoal: status, jadwalTampil: jadwal,
+                entryNama: entryNama, entryKelas: entryKelas, targetTingkat: targetTingkat, secretKey: secretKey, statusToken: statusToken, durasi: durasi
             })
         })
         .then(res => res.json())
         .then(res => {
-            alert("Ujian baru berhasil disimpan!");
-            document.getElementById('addNamaUjian').value = ""; 
-            document.getElementById('addUrlUjian').value = ""; 
-            document.getElementById('addJadwalTampil').value = "";
-            document.getElementById('addEntryNama').value = "";
-            document.getElementById('addEntryKelas').value = "";
+            alert("Ujian berhasil disimpan!");
+            document.getElementById('addNamaUjian').value = ""; document.getElementById('addUrlUjian').value = ""; document.getElementById('addJadwalTampil').value = "";
+            document.getElementById('addEntryNama').value = ""; document.getElementById('addEntryKelas').value = ""; document.getElementById('addSecretKey').value = "";
             renderDaftarUjianAdmin(res.daftarUjian);
         });
     });
 
+    // FUNGSI KHUSUS ADMIN UNTUK RE-FETCH / REFRESH TOKEN TERBARU PADA DETIK BERJALAN
+    function refreshTokensAdmin() {
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getRefreshUjian" }) })
+        .then(res => res.json()).then(res => {
+            renderDaftarUjianAdmin(res.daftarUjian);
+            alert("🔄 Token berhasil diperbarui berdasarkan waktu server saat ini!");
+        });
+    }
+
     function toggleSoal(idBaris, statusBaru) {
-        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleStatusSoal", idBaris: idBaris, status: statusBaru }) })
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleSoal", idBaris: idBaris, status: statusBaru }) })
+        .then(res => res.json()).then(res => { renderDaftarUjianAdmin(res.daftarUjian); });
+    }
+
+    function toggleToken(idBaris, statusBaru) {
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleToken", idBaris: idBaris, status: statusBaru }) })
         .then(res => res.json()).then(res => { renderDaftarUjianAdmin(res.daftarUjian); });
     }
 
     function hapusUjian(idBaris) {
-        if(!confirm("Hapus total mata ujian ini dari database?")) return;
+        if(!confirm("Hapus mata ujian ini?")) return;
         fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "deleteUjian", idBaris: idBaris }) })
-        .then(res => res.json()).then(res => { alert("Ujian terhapus!"); renderDaftarUjianAdmin(res.daftarUjian); });
+        .then(res => res.json()).then(res => { renderDaftarUjianAdmin(res.daftarUjian); });
     }
 
     function renderTableAdmin(columns, siswaList) {
