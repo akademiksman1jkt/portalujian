@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Ujian SMAN 1 Jakarta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-hover: #4338ca;
+            --success: #10b981; --success-hover: #059669;
+            --danger: #ef4444; --danger-hover: #dc2626;
+            --secondary: #64748b; --secondary-hover: #475569;
+            --bg-body: #f8fafc; --bg-card: #ffffff;
+            --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
+        .container { width: 100%; max-width: 780px; background: var(--bg-card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
+        .container.fullscreen { max-width: 100% !important; height: 100vh !important; border-radius: 0 !important; padding: 0 !important; border: none !important; display: flex; flex-direction: column; }
+        h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+        h3 { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        .form-group { text-align: left; margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+        input[type="text"], input[type="password"], input[type="datetime-local"], select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background-color: #f8fafc; outline: none; }
+        input:focus, select:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+        
+        .btn { padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; width: auto; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-secondary { background-color: var(--secondary); color: white; }
+        
+        #menuArea, #scoreArea, #examArea, #adminArea, #btnLihatNilai, #infoBelumRilis { display: none; }
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; }
+        th, td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--border); }
+        th { background-color: #f8fafc; font-weight: 700; }
+        .text-left { text-align: left; }
+        .flex-btn-group { display: flex; gap: 6px; justify-content: center; }
+
+        #examArea { width: 100%; flex-grow: 1; flex-direction: column; }
+        iframe { width: 100%; height: 100%; border: none; flex-grow: 1; }
+        .exam-header { display: flex; justify-content: space-between; align-items: center; background: #111827; color: white; padding: 16px 24px; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainContainer">
+    
+    <div id="loginArea">
+        <h2>Portal Ujian Online</h2>
+        <p class="subtitle">Silakan masuk untuk memulai ujian atau melihat nilai</p>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username / NISN</label>
+                <input type="text" id="username" placeholder="Masukkan NISN" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Masukkan password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btnSubmit" style="width:100%">Masuk ke Sistem</button>
+        </form>
+        <div id="loading" style="text-align:center">Memproses sinkronisasi basis data...</div>
+        <div id="errorMessage" style="text-align:center">Username atau Password salah!</div>
+    </div>
+
+    <div id="menuArea">
+        <h3>Dashboard Peserta</h3>
+        <div style="background: rgba(79, 70, 229, 0.05); border: 1px dashed var(--primary); padding: 14px; border-radius: 10px; margin-bottom: 20px;">
+            Selamat datang, <strong id="namaSiswa" style="color:var(--primary);">Siswa</strong>! (Kelas: <strong id="kelasSiswaBadge">-</strong>)
+        </div>
+        
+        <div class="form-group">
+            <label>Pilih Mata Ujian yang Aktif:</label>
+            <select id="selectUjianSiswa"><option value="">-- Tidak ada ujian aktif saat ini --</option></select>
+        </div>
+
+        <button class="btn btn-primary" id="btnMulaiUjian" style="width:100%">Mulai Ujian Terpilih</button>
+        <button class="btn btn-success" id="btnLihatNilai" style="width:100%; margin-top:10px;">Lihat Rilis Nilai</button>
+        <div id="infoBelumRilis" style="background:#fffbeb; color:#b45309; padding:12px; border-radius:10px; margin-top:12px; font-size:14px; border:1px solid #fef3c7;">
+            ℹ️ Catatan: Rekapitulasi nilai Anda belum dirilis oleh Guru.
+        </div>
+        <button class="btn btn-secondary" onclick="window.location.reload();" style="width:100%; margin-top:20px;">Keluar Sistem</button>
+    </div>
+
+    <div id="scoreArea">
+        <h3>Laporan Hasil Belajar</h3>
+        <p class="subtitle">Nama: <span id="namaSiswaNilai" style="font-weight:600;"></span> | Kelas: <span id="kelasSiswaNilai" style="font-weight:600;"></span></p>
+        <div class="table-responsive">
+            <table id="tabelNilaiSiswa">
+                <thead><tr id="headerNilaiSiswa"></tr></thead>
+                <tbody><tr id="bodyNilaiSiswa"></tr></tbody>
+            </table>
+        </div>
+        <button class="btn btn-secondary" onclick="backToMenu()" style="width:100%; margin-top: 24px;">Kembali</button>
+    </div>
+
+    <div id="adminArea">
+        <h3>⚙️ Administrator Panel</h3>
+        <p class="subtitle">Manajemen distribusi lembar soal, scheduler, dan rilis nilai</p>
+        
+        <div class="form-group" style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <label style="font-size:15px; margin-bottom:10px;">➕ Tambahkan Mata Ujian & Atur Jadwal Tampil</label>
+            <input type="text" id="addNamaUjian" placeholder="Nama Ujian (Contoh: UTS Pancasila)" style="margin-bottom:10px; background:white;">
+            <input type="text" id="addUrlUjian" placeholder="Link Bersih Google Form (Berakhiran /viewform)" style="margin-bottom:10px; background:white;">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label>Rilis Manual Langsung?</label>
+                    <select id="addStatusSoal" style="background:white;"><option value="TIDAK">TIDAK (Gunakan Timer)</option><option value="YA">YA (Langsung Tampil)</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Atur Timer / Jadwal Rilis:</label>
+                    <input type="datetime-local" id="addJadwalTampil" style="background:white;">
+                </div>
+            </div>
+            <button class="btn btn-success" id="btnTambahUjian" style="width:100%">Simpan Mata Ujian</button>
+        </div>
+        
+        <label style="margin-top:20px; display:block; font-weight:700;">Daftar Kontrol Ujian Aktif:</label>
+        <div class="table-responsive">
+            <table id="tabelDaftarUjian">
+                <thead><tr><th class="text-left">Nama Ujian / Link</th><th>Status Rilis</th><th>Timer Schedule</th><th>Aksi Kontrol</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        
+        <hr style="border:0; border-top:1px solid var(--border); margin:24px 0;">
+        <label style="font-weight:700;">Aksi Kontrol Nilai Rapor Siswa:</label>
+        <div style="display:flex; gap:12px; margin:8px 0 16px 0;">
+            <button class="btn btn-success" onclick="ubahStatusRilis('ALL', 'YA')" style="font-size:13px;">Buka Semua Nilai</button>
+            <button class="btn btn-danger" onclick="ubahStatusRilis('ALL', 'TIDAK')" style="font-size:13px;">Kunci Semua Nilai</button>
+        </div>
+        
+        <div class="table-responsive">
+            <table id="tabelSiswaAdmin">
+                <thead><tr id="headerAdmin"></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button class="btn btn-secondary" onclick="window.location.reload();" style="width:100%; margin-top:24px;">Log Out</button>
+    </div>
+
+    <div id="examArea">
+        <div class="exam-header">
+            <span id="judulUjianAktif" style="font-weight:700;">Ujian Sedang Berjalan</span>
+            <button onclick="window.location.reload();" class="btn btn-danger btn-sm">Keluar Ujian</button>
+        </div>
+        <iframe id="formFrame" src="">Memuat Jalur Lembar Soal...</iframe>
+    </div>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbySjELxIL3j65owDqElMII-DDPdobHID0p3DtFwGxlGQmjAVt1UAwCSKKZadcGq0HZB/exec"; // PASTE URL WEB APP ANDA DI SINI
+    let sessionData = {};
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const user = document.getElementById('username').value.trim();
+        const pass = document.getElementById('password').value.trim();
+        
+        document.getElementById('btnSubmit').disabled = true;
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "login", username: user, password: pass }) })
+        .then(res => res.json())
+        .then(res => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btnSubmit').disabled = false;
+
+            if(res.success) {
+                document.getElementById('loginArea').style.display = 'none';
+                sessionData = res;
+                
+                if(res.role === "admin") {
+                    document.getElementById('adminArea').style.display = 'block';
+                    renderTableAdmin(res.columns, res.siswa);
+                    renderDaftarUjianAdmin(res.daftarUjian);
+                } else {
+                    document.getElementById('menuArea').style.display = 'block';
+                    document.getElementById('namaSiswa').innerText = res.nama;
+                    document.getElementById('kelasSiswaBadge').innerText = res.kelas;
+                    populateDropdownSiswa(res.daftarUjian);
+
+                    if(res.isReleased) {
+                        document.getElementById('btnLihatNilai').style.display = 'block';
+                        document.getElementById('infoBelumRilis').style.display = 'none';
+                    } else {
+                        document.getElementById('btnLihatNilai').style.display = 'none';
+                        document.getElementById('infoBelumRilis').style.display = 'block';
+                    }
+                }
+            } else { document.getElementById('errorMessage').style.display = 'block'; }
+        });
+    });
+
+    function populateDropdownSiswa(daftarUjian) {
+        const select = document.getElementById('selectUjianSiswa');
+        if(daftarUjian.length === 0) {
+            select.innerHTML = '<option value="">-- Tidak ada ujian aktif/belum masuk jadwal --</option>';
+            return;
+        }
+        select.innerHTML = '<option value="">-- Pilih Mata Ujian --</option>';
+        daftarUjian.forEach(u => {
+            let opt = document.createElement('option');
+            opt.value = u.url; opt.innerText = u.nama; select.appendChild(opt);
+        });
+    }
+
+    document.getElementById('btnMulaiUjian').addEventListener('click', function() {
+        const selectBox = document.getElementById('selectUjianSiswa');
+        const selectedUrl = selectBox.value;
+        const selectedText = selectBox.options[selectBox.selectedIndex].text;
+        
+        if (!selectedUrl) { alert("Silakan pilih mata ujian!"); return; }
+
+        var idEntryNama = "entry.847591785";  // Ganti sesuai entry GForm Anda
+        var idEntryKelas = "entry.579895886"; // Ganti sesuai entry GForm Anda
+        
+        var customFormUrl = selectedUrl + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
+
+        document.getElementById('menuArea').style.display = 'none';
+        document.getElementById('mainContainer').classList.add('fullscreen');
+        document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + selectedText;
+        document.getElementById('examArea').style.display = 'flex';
+        document.getElementById('formFrame').src = customFormUrl;
+    });
+
+    document.getElementById('btnLihatNilai').addEventListener('click', function() {
+        document.getElementById('menuArea').style.display = 'none';
+        document.getElementById('namaSiswaNilai').innerText = sessionData.nama;
+        document.getElementById('kelasSiswaNilai').innerText = sessionData.kelas;
+        
+        const trHeader = document.getElementById('headerNilaiSiswa');
+        const trBody = document.getElementById('bodyNilaiSiswa');
+        trHeader.innerHTML = ""; trBody.innerHTML = "";
+        
+        sessionData.komponenNilai.forEach(n => {
+            let th = document.createElement('th'); th.innerText = n.namaKolom; trHeader.appendChild(th);
+            let td = document.createElement('td'); td.innerText = n.skor || '-'; trBody.appendChild(td);
+        });
+        document.getElementById('scoreArea').style.display = 'block';
+    });
+
+    function backToMenu() { document.getElementById('scoreArea').style.display = 'none'; document.getElementById('menuArea').style.display = 'block'; }
+
+    // RENDER MONITORING UJIAN DI SISI ADMIN
+    function renderDaftarUjianAdmin(daftarUjian) {
+        const tbody = document.querySelector("#tabelDaftarUjian tbody");
+        tbody.innerHTML = "";
+        daftarUjian.forEach(u => {
+            let tr = document.createElement('tr');
+            let txtRilis = u.status === 'YA' ? '🟢 Aktif (Dirilis)' : '🔴 Nonaktif';
+            let btnToggle = u.status === 'YA' 
+                ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup</button>`
+                : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
+            
+            let txtJadwal = u.jadwal ? u.jadwal.replace("T", " ") : "Tanpa Timer";
+
+            tr.innerHTML = `
+                <td class="text-left"><strong>${u.nama}</strong><br><small style="color:var(--text-muted)">${u.url}</small></td>
+                <td><span style="font-weight:600">${txtRilis}</span></td>
+                <td><small>${txtJadwal}</small></td>
+                <td>
+                    <div class="flex-btn-group">
+                        ${btnToggle}
+                        <button onclick="hapusUjian('${u.idBaris}')" class="btn btn-sm btn-danger">Hapus</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('btnTambahUjian').addEventListener('click', function() {
+        const nama = document.getElementById('addNamaUjian').value.trim();
+        const url = document.getElementById('addUrlUjian').value.trim();
+        const status = document.getElementById('addStatusSoal').value;
+        const jadwal = document.getElementById('addJadwalTampil').value; // Mengambil data input datetime
+        
+        if(!nama || !url) { alert("Nama dan Link Ujian wajib diisi!"); return; }
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "addUjian", namaUjian: nama, urlUjian: url, statusSoal: status, jadwalTampil: jadwal })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert("Ujian berhasil disimpan!");
+            document.getElementById('addNamaUjian').value = ""; document.getElementById('addUrlUjian').value = ""; document.getElementById('addJadwalTampil').value = "";
+            renderDaftarUjianAdmin(res.daftarUjian);
+        });
+    });
+
+    function toggleSoal(idBaris, statusBaru) {
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleStatusSoal", idBaris: idBaris, status: statusBaru }) })
+        .then(res => res.json()).then(res => { renderDaftarUjianAdmin(res.daftarUjian); });
+    }
+
+    function hapusUjian(idBaris) {
+        if(!confirm("Hapus total mata ujian ini dari database?")) return;
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "deleteUjian", idBaris: idBaris }) })
+        .then(res => res.json()).then(res => { alert("Ujian terhapus!"); renderDaftarUjianAdmin(res.daftarUjian); });
+    }
+
+    function renderTableAdmin(columns, siswaList) {
+        const trHeader = document.getElementById('headerAdmin');
+        trHeader.innerHTML = "<th>NISN</th><th>Nama</th><th>Kelas</th>";
+        columns.forEach(col => { let th = document.createElement('th'); th.innerText = col; trHeader.appendChild(th); });
+        trHeader.innerHTML += "<th>Status</th><th>Aksi</th>";
+
+        const tbody = document.querySelector("#tabelSiswaAdmin tbody"); tbody.innerHTML = "";
+        siswaList.forEach(s => {
+            let tr = document.createElement('tr');
+            let txtRilis = s.rilis.toUpperCase() === 'YA' ? '🟢 Rilis' : '🔴 Ditutup';
+            let btnAksi = s.rilis.toUpperCase() === 'YA' 
+                ? `<button onclick="ubahStatusRilis('${s.username}', 'TIDAK')" class="btn btn-sm btn-danger">Tutup</button>`
+                : `<button onclick="ubahStatusRilis('${s.username}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
+            let nilaiCells = "";
+            s.nilaiArray.forEach(val => { nilaiCells += `<td>${val || '-'}</td>`; });
+            tr.innerHTML = `<td>${s.username}</td><td class="text-left">${s.nama}</td><td>${s.kelas || '-'}</td>${nilaiCells}<td>${txtRilis}</td><td>${btnAksi}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function ubahStatusRilis(targetUser, statusBaru) {
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updateRilis", username: targetUser, status: statusBaru }) })
+        .then(() => { alert("Status nilai diperbarui!"); window.location.reload(); });
+    }
+</script>
+</body>
+</html>
