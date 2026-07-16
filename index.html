@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Ujian SMAN 1 Jakarta</title>
+    <title>Portal Ujian Modern & Universal Prefill</title>
+    
     <link rel="icon" type="image/png" href="favicon.png">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,9 +24,9 @@
         body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
         .container { width: 100%; max-width: 820px; background: var(--bg-card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
         .container.fullscreen { max-width: 100% !important; height: 100vh !important; border-radius: 0 !important; padding: 0 !important; border: none !important; display: flex; flex-direction: column; }
-        h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
-        h3 { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; text-align: center; }
+        h3 { font-size: 20px; font-weight: 600; margin-bottom: 20px; text-align: center; }
         .form-group { text-align: left; margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
         input[type="text"], input[type="password"], input[type="datetime-local"], select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background-color: #f8fafc; outline: none; }
@@ -39,7 +41,6 @@
         
         #menuArea, #scoreArea, #examArea, #adminArea, #btnLihatNilai, #infoBelumRilis { display: none; }
         
-        /* Navigasi Menu/Tab Admin Modern */
         .admin-nav { display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 24px; padding-bottom: 4px; }
         .nav-item { padding: 10px 16px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text-muted); border-radius: 8px 8px 0 0; transition: 0.2s; border-bottom: 2px solid transparent; margin-bottom: -6px; }
         .nav-item:hover { color: var(--primary); background: #f1f5f9; }
@@ -78,12 +79,12 @@
             <button type="submit" class="btn btn-primary" id="btnSubmit" style="width:100%">Masuk ke Sistem</button>
         </form>
         <div id="loading" style="text-align:center; margin-top: 10px;">Memproses sinkronisasi basis data...</div>
-        <div id="errorMessage" style="text-align:center; margin-top: 10px;">Username atau Password salah!</div>
+        <div id="errorMessage" style="text-align:center; margin-top: 10px; color: var(--danger); font-weight: 700; display: none;">Username atau Password salah!</div>
     </div>
 
     <div id="menuArea">
         <h3>Dashboard Peserta</h3>
-        <div style="background: rgba(79, 70, 229, 0.05); border: 1px dashed var(--primary); padding: 14px; border-radius: 10px; margin-bottom: 20px;">
+        <div style="background: rgba(79, 70, 229, 0.05); border: 1px dashed var(--primary); padding: 14px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
             Selamat datang, <strong id="namaSiswa" style="color:var(--primary);">Siswa</strong>! (Kelas: <strong id="kelasSiswaBadge">-</strong>)
         </div>
         
@@ -123,9 +124,20 @@
 
         <div id="sectionSoal" class="admin-section active">
             <div class="form-group" style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                <label style="font-size:15px; margin-bottom:10px;">➕ Tambahkan Mata Ujian & Atur Jadwal Tampil</label>
+                <label style="font-size:15px; margin-bottom:10px; display: block;">➕ Tambahkan Mata Ujian Baru & Konfigurasi Prefill</label>
                 <input type="text" id="addNamaUjian" placeholder="Nama Ujian (Contoh: UTS Pancasila)" style="margin-bottom:10px; background:white;">
                 <input type="text" id="addUrlUjian" placeholder="Link Bersih Google Form (Berakhiran /viewform)" style="margin-bottom:10px; background:white;">
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted)">ID Entry Nama GForm:</label>
+                        <input type="text" id="addEntryNama" placeholder="Contoh: entry.148293048" style="background:white;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:var(--text-muted)">ID Entry Kelas GForm:</label>
+                        <input type="text" id="addEntryKelas" placeholder="Contoh: entry.883729401" style="background:white;">
+                    </div>
+                </div>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div class="form-group">
@@ -179,16 +191,12 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbySjELxIL3j65owDqElMII-DDPdobHID0p3DtFwGxlGQmjAVt1UAwCSKKZadcGq0HZB/exec"; // PASTE URL WEB APP ANDA DI SINI
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbySjELxIL3j65owDqElMII-DDPdobHID0p3DtFwGxlGQmjAVt1UAwCSKKZadcGq0HZB/exec"; // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
     let sessionData = {};
 
-    // FUNGSI KHUSUS UNTUK MODUL NAVIGASI TAB ADMIN
     function switchAdminTab(sectionId, element) {
-        // Matikan semua tab section
         document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-        
-        // Aktifkan tab terpilih
         document.getElementById(sectionId).classList.add('active');
         element.classList.add('active');
     }
@@ -247,21 +255,24 @@
         });
     }
 
+    // LOGIKA DINAMIS AUTOFILL MENYESUAIKAN KOLOM INPUT ADMIN
     document.getElementById('btnMulaiUjian').addEventListener('click', function() {
         const selectBox = document.getElementById('selectUjianSiswa');
-        const selectedUrl = selectBox.value;
-        const selectedText = selectBox.options[selectBox.selectedIndex].text;
+        const selectedIndex = selectBox.selectedIndex;
         
-        if (!selectedUrl) { alert("Silakan pilih mata ujian!"); return; }
-
-        var idEntryNama = "entry.847591785";  
-        var idEntryKelas = "entry.579895886"; 
+        if (selectedIndex === 0) { alert("Silakan pilih mata ujian!"); return; }
         
-        var customFormUrl = selectedUrl + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
+        const ujianTerpilih = sessionData.daftarUjian[selectedIndex - 1]; 
+        
+        // Membaca ID entry dinamis dari database sesuai form yang dipilih siswa
+        var idEntryNama = ujianTerpilih.entryNama || "entry.229862433";  
+        var idEntryKelas = ujianTerpilih.entryKelas || "entry.33523970"; 
+        
+        var customFormUrl = ujianTerpilih.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
 
         document.getElementById('menuArea').style.display = 'none';
         document.getElementById('mainContainer').classList.add('fullscreen');
-        document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + selectedText;
+        document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujianTerpilih.nama;
         document.getElementById('examArea').style.display = 'flex';
         document.getElementById('formFrame').src = customFormUrl;
     });
@@ -311,22 +322,40 @@
         });
     }
 
+    // INI ADALAH FUNGSI ADD EVENT LISTENER YANG MEMBACA DAN MENGIRIM KEDUA INPUT TERSEBUT
     document.getElementById('btnTambahUjian').addEventListener('click', function() {
         const nama = document.getElementById('addNamaUjian').value.trim();
         const url = document.getElementById('addUrlUjian').value.trim();
         const status = document.getElementById('addStatusSoal').value;
         const jadwal = document.getElementById('addJadwalTampil').value;
+        const entryNama = document.getElementById('addEntryNama').value.trim();
+        const entryKelas = document.getElementById('addEntryKelas').value.trim();
         
-        if(!nama || !url) { alert("Nama dan Link Ujian wajib diisi!"); return; }
+        if(!nama || !url || !entryNama || !entryKelas) { 
+            alert("Nama, Link Ujian, ID Entry Nama, dan ID Entry Kelas wajib diisi agar Autofill berfungsi!"); 
+            return; 
+        }
 
         fetch(WEB_APP_URL, {
             method: 'POST',
-            body: JSON.stringify({ action: "addUjian", namaUjian: nama, urlUjian: url, statusSoal: status, jadwalTampil: jadwal })
+            body: JSON.stringify({ 
+                action: "addUjian", 
+                namaUjian: nama, 
+                urlUjian: url, 
+                statusSoal: status, 
+                jadwalTampil: jadwal,
+                entryNama: entryNama, // Dikirim ke server
+                entryKelas: entryKelas // Dikirim ke server
+            })
         })
         .then(res => res.json())
         .then(res => {
-            alert("Ujian berhasil disimpan!");
-            document.getElementById('addNamaUjian').value = ""; document.getElementById('addUrlUjian').value = ""; document.getElementById('addJadwalTampil').value = "";
+            alert("Ujian baru berhasil disimpan!");
+            document.getElementById('addNamaUjian').value = ""; 
+            document.getElementById('addUrlUjian').value = ""; 
+            document.getElementById('addJadwalTampil').value = "";
+            document.getElementById('addEntryNama').value = "";
+            document.getElementById('addEntryKelas').value = "";
             renderDaftarUjianAdmin(res.daftarUjian);
         });
     });
