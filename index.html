@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Ujian SMAN 1 Jakarta</title>
+    <title>Portal Ujian Modern - Target Spesifik Kelas</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,32 +48,80 @@
         .admin-section { display: none; }
         .admin-section.active { display: block; }
 
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 12px; border-radius: 12px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 800px; }
         th, td { padding: 14px 16px; text-align: center; border-bottom: 1px solid var(--border); vertical-align: middle; }
         th { background-color: #f8fafc; font-weight: 700; color: var(--text-main); }
         .text-left { text-align: left; }
         .flex-btn-group { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 
-        .token-badge {
-            background-color: rgba(79, 70, 229, 0.1);
-            color: var(--primary);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 15px;
-            letter-spacing: 0.5px;
-            border: 1px solid rgba(79, 70, 229, 0.2);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: 0.2s;
+        /* Desain Baru Grid Monitor Token */
+        .token-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+            margin-top: 10px;
         }
-        .token-badge:hover {
-            background-color: var(--primary);
+        .token-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+            transition: 0.3s;
+        }
+        .token-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1);
+            transform: translateY(-2px);
+        }
+        .token-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .token-card .target-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        .token-display-box {
+            background: #1e1b4b;
+            color: #c7d2fe;
+            font-size: 26px;
+            font-weight: 800;
+            padding: 12px;
+            border-radius: 10px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border: 2px solid #312e81;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .token-display-box:hover {
+            background: var(--primary);
             color: white;
-            transform: scale(1.05);
+            border-color: var(--primary-hover);
+        }
+        .token-card .timer-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-weight: 500;
         }
 
         #examArea { width: 100%; flex-grow: 1; flex-direction: column; }
@@ -87,12 +135,12 @@
     
     <!-- 1. FORM LOGIN -->
     <div id="loginArea">
-        <h2>Portal Ujian SMAN 1 Jakarta</h2>
-        <p class="subtitle">Silakan masuk untuk memulai ujian</p>
+        <h2>Portal Ujian Online</h2>
+        <p class="subtitle">Silakan masuk untuk memulai ujian atau manajemen sistem</p>
         <form id="loginForm">
             <div class="form-group">
                 <label>Username / NISN</label>
-                <input type="text" id="username" placeholder="Masukkan NISN" required autocomplete="off">
+                <input type="text" id="username" placeholder="Masukkan NISN atau ID Admin" required autocomplete="off">
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -147,14 +195,13 @@
         <h3>⚙️ Administrator Panel</h3>
         <p class="subtitle">Manajemen Lembar Soal, Filter Kelas Spesifik, Token & Scheduler</p>
         
-        <!-- NAVIGASI TAB BARU: DIVISUALISASIKAN SECARA TERPISAH DAN RAPI -->
         <div class="admin-nav">
             <div class="nav-item active" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">1. Buat & Edit Ujian</div>
             <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">2. Daftar Ujian & Token</div>
             <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">3. Data & Nilai Siswa</div>
         </div>
 
-        <!-- HALAMAN TAB 1: KHUSUS FORMULIR INPUT SAJA -->
+        <!-- TAB 1: FORMULIR INPUT -->
         <div id="sectionInputSoal" class="admin-section active">
             <div class="form-group" style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid var(--border);">
                 <label id="formUjianTitle" style="font-size:18px; margin-bottom:16px; display: block; font-weight:700; color:var(--primary);">➕ Tambahkan Mata Ujian Baru</label>
@@ -219,23 +266,33 @@
             </div>
         </div>
 
-        <!-- HALAMAN TAB 2: KHUSUS TABEL MONITORING & TOKEN -->
+        <!-- TAB 2: SEKARANG TERBAGI MENJADI BADGE MONITOR TOKEN DAN TABEL DAFTAR -->
         <div id="sectionDaftarSoal" class="admin-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-                <label style="font-weight:700; font-size:16px;">Daftar Kontrol Ujian Aktif di Cloud:</label>
-                <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()">🔄 Refresh Token Sekarang</button>
+            
+            <!-- BLOK KELOMPOK BARU: MONITORING TOKEN DINAMIS -->
+            <div style="display:flex; justify-content:between; align-items:center; margin-bottom: 8px;">
+                <label style="font-weight:800; font-size:16px; color:var(--primary);">🔑 PUSAT MONITOR TOKEN AKTIF (KLIK UNTUK SALIN)</label>
+                <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()" style="margin-left:auto;">🔄 Force Refresh Token</button>
             </div>
             
+            <!-- Grid Card Token yang Terpisah & Lebih Menarik -->
+            <div class="token-grid" id="containerMonitorToken">
+                <!-- Data Card diisi secara dinamis oleh JavaScript -->
+            </div>
+
+            <hr style="border:0; border-top:2px dashed var(--border); margin: 30px 0 20px 0;">
+
+            <!-- BLOK KELOMPOK KEDUA: TABEL MANAGEMEN BERSIH TANPA KOLOM TOKEN -->
+            <label style="font-weight:800; font-size:16px; color:var(--secondary); display:block; margin-bottom: 10px;">📋 TABEL MANAJEMEN RILIS & JADWAL SOAL</label>
             <div class="table-responsive">
                 <table id="tabelDaftarUjian">
                     <thead>
                         <tr>
-                            <th class="text-left" style="width:25%;">Nama Ujian</th>
-                            <th style="width:12%;">Target Kelas</th>
-                            <th style="width:10%;">Soal</th>
-                            <th style="width:23%;">Token Berlaku (Klik Copy)</th>
-                            <th style="width:15%;">Timer Terjadwal</th>
-                            <th style="width:15%;">Aksi Kontrol</th>
+                            <th class="text-left" style="width:35%;">Nama Ujian / Sumber Form</th>
+                            <th style="width:15%;">Target Distribusi</th>
+                            <th style="width:15%;">Status Rilis</th>
+                            <th style="width:15%;">Timer Otomatis</th>
+                            <th style="width:20%;">Kontrol Aksi</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -243,7 +300,7 @@
             </div>
         </div>
 
-        <!-- HALAMAN TAB 3: REKAP NILAI SISWA -->
+        <!-- TAB 3: REKAP NILAI SISWA -->
         <div id="sectionSiswa" class="admin-section">
             <label style="font-weight:700;">Aksi Kontrol Nilai Rapor Siswa:</label>
             <div style="display:flex; gap:12px; margin:8px 0 16px 0;">
@@ -456,44 +513,60 @@
 
     function backToMenu() { document.getElementById('scoreArea').style.display = 'none'; document.getElementById('menuArea').style.display = 'block'; }
 
-    // RENDER TABEL DAFTAR SOAL & BADGE COPY TOKEN
+    // FUNGSI UTAMA PENGATUR RENDERING PADA TAB 2 (MONITOR TOKEN CARDS & TABEL BERSIH)
     function renderDaftarUjianAdmin(daftarUjian) {
+        // 1. Render Blok Monitor Token Khusus Atas
+        const tokenContainer = document.getElementById("containerMonitorToken");
+        tokenContainer.innerHTML = "";
+        
+        let adaTokenAktif = false;
+
+        daftarUjian.forEach(u => {
+            if(u.statusToken === 'AKTIF') {
+                adaTokenAktif = true;
+                let card = document.createElement('div');
+                card.className = "token-card";
+                card.innerHTML = `
+                    <h4>${u.nama}</h4>
+                    <span class="target-badge">Target: ${u.targetTingkat}</span>
+                    <div class="token-display-box" onclick="copyTokenText('${u.tokenSoal}')" title="Klik untuk menyalin token">
+                        🔑 <span>${u.tokenSoal}</span>
+                    </div>
+                    <div class="timer-info">🔄 Berubah Otomatis Tiap ${u.durasi} Mnt</div>
+                `;
+                tokenContainer.appendChild(card);
+            }
+        });
+
+        if(!adaTokenAktif) {
+            tokenContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 20px; background:#f1f5f9; border-radius:10px; color:var(--text-muted); font-weight:600; font-size:14px;">ℹ️ Saat ini tidak ada ujian dengan sistem token aktif.</div>`;
+        }
+
+        // 2. Render Blok Tabel Kontrol Manajemen Ujian Bawah
         const tbody = document.querySelector("#tabelDaftarUjian tbody");
         tbody.innerHTML = "";
+        
         daftarUjian.forEach(u => {
             let tr = document.createElement('tr');
             let txtSoal = u.status === 'YA' ? '<span style="color:var(--success); font-weight:700;">🟢 Aktif</span>' : '<span style="color:var(--text-muted);">🔴 Tutup</span>';
-            
-            let txtToken = "";
-            if(u.statusToken === 'AKTIF') {
-                txtToken = `
-                    <div class="token-badge" onclick="copyTokenText('${u.tokenSoal}')" title="Klik untuk menyalin token">
-                        🔑 <strong>${u.tokenSoal}</strong>
-                    </div>
-                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Rolling tiap ${u.durasi} menit</div>
-                `;
-            } else {
-                txtToken = '<span style="color:var(--text-muted); font-size:13px;">🔴 Nonaktif</span>';
-            }
             
             let btnToggleSoal = u.status === 'YA' 
                 ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup</button>`
                 : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
                 
             let btnToggleToken = u.statusToken === 'AKTIF'
-                ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Mute</button>`
-                : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Token</button>`;
+                ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Mute Token</button>`
+                : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Open Token</button>`;
             
             let txtJadwal = u.jadwal ? u.jadwal.replace("T", " ") : "Tanpa Timer";
 
             tr.innerHTML = `
                 <td class="text-left">
                     <strong style="font-size:15px; color:var(--text-main);">${u.nama}</strong><br>
-                    <a href="${u.url}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;">🔗 Buka GForm</a>
+                    <a href="${u.url}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;">🔗 Buka Link Asli GForm</a>
                 </td>
-                <td><span style="background:#e0e7ff; color:#3730a3; padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px;">${u.targetTingkat}</span></td>
+                <td><span style="background:#f1f5f9; color:var(--text-main); padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px; border:1px solid var(--border);">${u.targetTingkat}</span></td>
                 <td>${txtSoal}</td>
-                <td>${txtToken}</td>
                 <td><small style="font-weight:600; color:var(--text-muted);">${txtJadwal}</small></td>
                 <td>
                     <div class="flex-btn-group">
@@ -510,13 +583,12 @@
 
     function copyTokenText(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert("📋 Token " + text + " berhasil disalin!");
+            alert("📋 Token [" + text + "] berhasil disalin ke clipboard!");
         }).catch(err => {
             alert("Silakan salin manual: " + text);
         });
     }
 
-    // PICU PROSES EDIT: FORM DI TAB 1 DIBUKA OTOMATIS SAAT TOMBOL EDIT DI TAB 2 DIKLIK
     function picuEditUjian(idBaris) {
         const ujian = sessionData.daftarUjian.find(u => u.idBaris == idBaris);
         if(!ujian) return;
@@ -540,7 +612,6 @@
         document.getElementById('btnTambahUjian').className = "btn btn-warning";
         document.getElementById('btnBatalEdit').style.display = "inline-flex";
 
-        // Alihkan halaman otomatis ke Halaman Input Formulir (Tab 1)
         switchAdminTab('sectionInputSoal', document.getElementById('tabInput'));
     }
 
@@ -615,7 +686,6 @@
             alert("Data ujian berhasil diperbarui!");
             resetFormUjian();
             renderDaftarUjianAdmin(res.daftarUjian);
-            // Pindahkan halaman ke Tab 2 (Daftar Ujian & Token) setelah berhasil menyimpan
             switchAdminTab('sectionDaftarSoal', document.getElementById('tabDaftar'));
         });
     }
