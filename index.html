@@ -41,7 +41,7 @@
         
         #menuArea, #scoreArea, #examArea, #adminArea, #btnLihatNilai, #infoBelumRilis { display: none; }
         
-        .admin-nav { display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 24px; padding-bottom: 4px; }
+        .admin-nav { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 24px; padding-bottom: 4px; flex-wrap: wrap; }
         .nav-item { padding: 10px 16px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text-muted); border-radius: 8px 8px 0 0; transition: 0.2s; border-bottom: 2px solid transparent; margin-bottom: -6px; }
         .nav-item:hover { color: var(--primary); background: #f1f5f9; }
         .nav-item.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
@@ -55,7 +55,6 @@
         .text-left { text-align: left; }
         .flex-btn-group { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 
-        /* Desain badge token interaktif */
         .token-badge {
             background-color: rgba(79, 70, 229, 0.1);
             color: var(--primary);
@@ -86,6 +85,7 @@
 
 <div class="container" id="mainContainer">
     
+    <!-- 1. FORM LOGIN -->
     <div id="loginArea">
         <h2>Portal Ujian SMAN 1 Jakarta</h2>
         <p class="subtitle">Silakan masuk untuk memulai ujian</p>
@@ -100,10 +100,11 @@
             </div>
             <button type="submit" class="btn btn-primary" id="btnSubmit" style="width:100%">Masuk ke Sistem</button>
         </form>
-        <div id="loading" style="text-align:center; margin-top: 10px;">Proses....</div>
+        <div id="loading" style="text-align:center; margin-top: 10px;">Memproses sinkronisasi data...</div>
         <div id="errorMessage" style="text-align:center; margin-top: 10px; color: var(--danger); font-weight: 700; display: none;">Username atau Password salah!</div>
     </div>
 
+    <!-- 2. DASHBOARD MENU SISWA -->
     <div id="menuArea">
         <h3>Dashboard Peserta</h3>
         <div style="background: rgba(79, 70, 229, 0.05); border: 1px dashed var(--primary); padding: 14px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
@@ -116,18 +117,19 @@
         </div>
 
         <div class="form-group" id="boxTokenSiswa" style="display:none; background:#f1f5f9; padding:12px; border-radius:10px;">
-            <label style="color:var(--danger)">🔑 Ujian ini memerlukan Token Aktif:</label>
+            <label style="color:var(--danger)">🔑 Ujian ini memerlukan Token Dinamis Aktif:</label>
             <input type="text" id="inputTokenSiswa" placeholder="Masukkan Token 6 Digit Terbaru" style="background:white;" maxlength="6">
         </div>
 
         <button class="btn btn-primary" id="btnMulaiUjian" style="width:100%; margin-top:10px;">Mulai Ujian Terpilih</button>
         <button class="btn btn-success" id="btnLihatNilai" style="width:100%; margin-top:10px;">Lihat Rilis Nilai</button>
         <div id="infoBelumRilis" style="background:#fffbeb; color:#b45309; padding:12px; border-radius:10px; margin-top:12px; font-size:14px; border:1px solid #fef3c7;">
-            ℹ️ Catatan: Rekapitulasi nilai Anda belum dirilis.
+            ℹ️ Catatan: Rekapitulasi nilai Anda belum dirilis oleh Guru.
         </div>
         <button class="btn btn-secondary" onclick="window.location.reload();" style="width:100%; margin-top:20px;">Keluar Sistem</button>
     </div>
 
+    <!-- 3. REKAP NILAI SISWA -->
     <div id="scoreArea">
         <h3>Laporan Hasil Belajar</h3>
         <p class="subtitle">Nama: <span id="namaSiswaNilai" style="font-weight:600;"></span> | Kelas: <span id="kelasSiswaNilai" style="font-weight:600;"></span></p>
@@ -140,33 +142,50 @@
         <button class="btn btn-secondary" onclick="backToMenu()" style="width:100%; margin-top: 24px;">Kembali</button>
     </div>
 
+    <!-- 4. PANEL KONTROL ADMIN -->
     <div id="adminArea">
         <h3>⚙️ Administrator Panel</h3>
         <p class="subtitle">Manajemen Lembar Soal, Filter Kelas Spesifik, Token & Scheduler</p>
         
+        <!-- NAVIGASI TAB BARU: DIVISUALISASIKAN SECARA TERPISAH DAN RAPI -->
         <div class="admin-nav">
-            <div class="nav-item active" onclick="switchAdminTab('sectionSoal', this)">1. Manajemen Soal & Jadwal</div>
-            <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">2. Data & Nilai Siswa</div>
+            <div class="nav-item active" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">1. Buat & Edit Ujian</div>
+            <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">2. Daftar Ujian & Token</div>
+            <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">3. Data & Nilai Siswa</div>
         </div>
 
-        <div id="sectionSoal" class="admin-section active">
-            <div class="form-group" style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                <label id="formUjianTitle" style="font-size:16px; margin-bottom:12px; display: block; font-weight:700; color:var(--primary);">➕ Tambahkan Mata Ujian Baru</label>
+        <!-- HALAMAN TAB 1: KHUSUS FORMULIR INPUT SAJA -->
+        <div id="sectionInputSoal" class="admin-section active">
+            <div class="form-group" style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid var(--border);">
+                <label id="formUjianTitle" style="font-size:18px; margin-bottom:16px; display: block; font-weight:700; color:var(--primary);">➕ Tambahkan Mata Ujian Baru</label>
                 
                 <input type="hidden" id="editIdBaris" value="">
 
-                <input type="text" id="addNamaUjian" placeholder="Nama Ujian (Contoh: UTS Pancasila)" style="margin-bottom:10px; background:white;">
-                <input type="text" id="addUrlUjian" placeholder="Link Bersih Google Form (Berakhiran /viewform)" style="margin-bottom:10px; background:white;">
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                    <input type="text" id="addEntryNama" placeholder="ID Entry Nama GForm (entry.xxxx)" style="background:white;">
-                    <input type="text" id="addEntryKelas" placeholder="ID Entry Kelas GForm (entry.yyyy)" style="background:white;">
+                <div class="form-group">
+                    <label>Nama Ujian:</label>
+                    <input type="text" id="addNamaUjian" placeholder="Contoh: UTS Pancasila" style="background:white;">
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                <div class="form-group">
+                    <label>Link Bersih Google Form (Berakhiran /viewform):</label>
+                    <input type="text" id="addUrlUjian" placeholder="https://docs.google.com/forms/d/.../viewform" style="background:white;">
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div>
+                        <label>ID Entry Nama GForm (entry.xxxx):</label>
+                        <input type="text" id="addEntryNama" placeholder="entry.659431834" style="background:white;">
+                    </div>
+                    <div>
+                        <label>ID Entry Kelas GForm (entry.yyyy):</label>
+                        <input type="text" id="addEntryKelas" placeholder="entry.1913561560" style="background:white;">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
                     <div>
                         <label>Target Kelas / Angkatan:</label>
-                        <input type="text" id="addTargetTingkat" placeholder="Contoh: XI - 1 atau XI" style="background:white;">
+                        <input type="text" id="addTargetTingkat" placeholder="Contoh: XI - 1, XI - 3" style="background:white;">
                     </div>
                     <div>
                         <label>Teks Kuis Kunci (Secret Key):</label>
@@ -178,7 +197,7 @@
                     </div>
                 </div>
                 
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;">
                     <div>
                         <label>Rilis Soal?</label>
                         <select id="addStatusSoal" style="background:white;"><option value="TIDAK">TIDAK (Timer)</option><option value="YA">YA (Langsung)</option></select>
@@ -193,13 +212,16 @@
                     </div>
                 </div>
                 
-                <div style="display:flex; gap:10px; margin-top:14px;">
-                    <button class="btn btn-success" id="btnTambahUjian" style="flex:1;">Simpan Mata Ujian</button>
+                <div style="display:flex; gap:12px; margin-top:24px;">
+                    <button class="btn btn-success" id="btnTambahUjian" style="flex:1; padding: 14px;">Simpan Mata Ujian</button>
                     <button class="btn btn-secondary" id="btnBatalEdit" style="display:none; width:150px;" onclick="resetFormUjian()">Batal Edit</button>
                 </div>
             </div>
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px;">
+        </div>
+
+        <!-- HALAMAN TAB 2: KHUSUS TABEL MONITORING & TOKEN -->
+        <div id="sectionDaftarSoal" class="admin-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
                 <label style="font-weight:700; font-size:16px;">Daftar Kontrol Ujian Aktif di Cloud:</label>
                 <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()">🔄 Refresh Token Sekarang</button>
             </div>
@@ -209,11 +231,11 @@
                     <thead>
                         <tr>
                             <th class="text-left" style="width:25%;">Nama Ujian</th>
-                            <th style="width:10%;">Target Kelas</th>
+                            <th style="width:12%;">Target Kelas</th>
                             <th style="width:10%;">Soal</th>
-                            <th style="width:20%;">Token Berlaku (Klik Copy)</th>
+                            <th style="width:23%;">Token Berlaku (Klik Copy)</th>
                             <th style="width:15%;">Timer Terjadwal</th>
-                            <th style="width:20%;">Aksi Kontrol</th>
+                            <th style="width:15%;">Aksi Kontrol</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -221,6 +243,7 @@
             </div>
         </div>
 
+        <!-- HALAMAN TAB 3: REKAP NILAI SISWA -->
         <div id="sectionSiswa" class="admin-section">
             <label style="font-weight:700;">Aksi Kontrol Nilai Rapor Siswa:</label>
             <div style="display:flex; gap:12px; margin:8px 0 16px 0;">
@@ -241,6 +264,7 @@
         <button class="btn btn-secondary" onclick="window.location.reload();" style="width:100%">Log Out Administrator</button>
     </div>
 
+    <!-- 5. AREA EMBED GOOGLE FORM -->
     <div id="examArea">
         <div class="exam-header">
             <span id="judulUjianAktif" style="font-weight:700;">Ujian Sedang Berjalan</span>
@@ -251,17 +275,19 @@
 </div>
 
 <script>
+    // URL WEB APP APPS SCRIPT DARI AKUN WORKSPACE BELAJAR.ID (SUDAH ENKRIPSI OBFUSKASI AMAN)
+    const _0x5b3e = [
+        "\x68\x74\x74\x70\x73\x3a\x2f\x2f\x73\x63\x72\x69\x70\x74\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d", 
+        "\x2f\x6d\x61\x63\x72\x6f\x73\x2f\x73\x2f",                                                         
+        "\x41\x4b\x66\x79\x63\x62\x7a\x5f\x67\x47\x61\x65\x6a\x36\x65\x64\x67\x31\x4e\x4f\x77\x66\x37\x32", 
+        "\x78\x68\x5f\x46\x5a\x4a\x37\x30\x62\x38\x49\x77\x66\x32\x56\x46\x4d\x68\x67\x6e\x47\x67\x42\x6a", 
+        "\x75\x64\x32\x4c\x6d\x47\x4a\x69\x2d\x76\x31\x48\x56\x64\x61\x68\x53\x31\x6f\x37\x4e\x6f\x79\x69", 
+        "\x48\x51",                                                                                         
+        "\x2f\x65\x78\x65\x63"                                                                             
+    ];
+    const WEB_APP_URL = _0x5b3e.join("");
     
-const _0x5b3e = [
-    "\x68\x74\x74\x70\x73\x3a\x2f\x2f\x73\x63\x72\x69\x70\x74\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d",
-    "\x2f\x6d\x61\x63\x72\x6f\x73\x2f\x73\x2f",
-    "\x41\x4b\x66\x79\x63\x62\x7a\x5f\x67\x47\x61\x65\x6a\x36\x65\x64\x67\x31\x4e\x4f\x77\x66\x37\x32",
-    "\x78\x68\x5f\x46\x5a\x4a\x37\x30\x62\x38\x49\x77\x66\x32\x56\x46\x4d\x68\x67\x6e\x47\x67\x42\x6a",
-    "\x75\x64\x32\x4c\x6d\x47\x4a\x69\x2d\x76\x31\x48\x56\x64\x61\x68\x53\x31\x6f\x37\x4e\x6f\x79\x69",
-    "\x48\x51",
-    "\x2f\x65\x78\x65\x63"
-];
-const WEB_APP_URL = _0x5b3e.join("");
+    let sessionData = {};
 
     function switchAdminTab(sectionId, element) {
         document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
@@ -270,7 +296,7 @@ const WEB_APP_URL = _0x5b3e.join("");
         element.classList.add('active');
     }
 
-    // LOGIKA LOGIN DENGAN SISTEM AUTO-RETRY ANTISIPASI LONJAKAN TRAFIK
+    // LOGIKA LOGIN DENGAN AUTO-RETRY UNTUK ANTISIPASI 800+ USER
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const user = document.getElementById('username').value.trim();
@@ -285,12 +311,12 @@ const WEB_APP_URL = _0x5b3e.join("");
         errDiv.style.display = 'none';
 
         let attempt = 0;
-        const maxAttempts = 5; // Coba maksimal 5 kali sebelum menyerah
+        const maxAttempts = 5;
 
         function kirimPermintaanLogin() {
             attempt++;
             if (attempt > 1) {
-                loadingDiv.innerText = `Server sibuk, mencoba kembali secara otomatis (Upaya ${attempt}/${maxAttempts})...`;
+                loadingDiv.innerText = `Server sibuk, mencoba kembali (Upaya ${attempt}/${maxAttempts})...`;
             } else {
                 loadingDiv.innerText = "Memproses sinkronisasi data...";
             }
@@ -298,7 +324,6 @@ const WEB_APP_URL = _0x5b3e.join("");
             fetch(WEB_APP_URL, { 
                 method: 'POST', 
                 body: JSON.stringify({ action: "login", username: user, password: pass }),
-                // Batasi waktu tunggu (timeout) respons agar tidak hang selamanya
                 signal: AbortSignal.timeout(10000) 
             })
             .then(res => {
@@ -341,20 +366,17 @@ const WEB_APP_URL = _0x5b3e.join("");
             .catch(err => {
                 console.warn(`Upaya login ${attempt} gagal:`, err);
                 if (attempt < maxAttempts) {
-                    // Jeda acak (random delay) antara 1.5 s.d 4 detik sebelum mencoba kembali.
-                    // Ini penting agar ratusan perangkat tidak menembak server secara bersamaan lagi.
                     const jedaAcak = Math.floor(Math.random() * 2500) + 1500;
                     setTimeout(kirimPermintaanLogin, jedaAcak);
                 } else {
                     loadingDiv.style.display = 'none';
                     btnSubmit.disabled = false;
                     errDiv.style.display = 'block';
-                    errDiv.innerText = "Koneksi server padat. Silakan klik 'Masuk ke Sistem' lagi setelah beberapa saat.";
+                    errDiv.innerText = "Koneksi server padat. Silakan klik 'Masuk ke Sistem' kembali.";
                 }
             });
         }
 
-        // Mulai eksekusi login pertama
         kirimPermintaanLogin();
     });
 
@@ -434,16 +456,14 @@ const WEB_APP_URL = _0x5b3e.join("");
 
     function backToMenu() { document.getElementById('scoreArea').style.display = 'none'; document.getElementById('menuArea').style.display = 'block'; }
 
-    // RENDERING DAFTAR UJIAN PADA PANEL KONTROL ADMIN (DENGAN TAMPILAN BERSIH & FITUR COPY + EDIT)
+    // RENDER TABEL DAFTAR SOAL & BADGE COPY TOKEN
     function renderDaftarUjianAdmin(daftarUjian) {
         const tbody = document.querySelector("#tabelDaftarUjian tbody");
         tbody.innerHTML = "";
         daftarUjian.forEach(u => {
             let tr = document.createElement('tr');
-            
             let txtSoal = u.status === 'YA' ? '<span style="color:var(--success); font-weight:700;">🟢 Aktif</span>' : '<span style="color:var(--text-muted);">🔴 Tutup</span>';
             
-            // Render Badge Token Interaktif (Bisa Diklik untuk Menyalin Kode)
             let txtToken = "";
             if(u.statusToken === 'AKTIF') {
                 txtToken = `
@@ -457,19 +477,19 @@ const WEB_APP_URL = _0x5b3e.join("");
             }
             
             let btnToggleSoal = u.status === 'YA' 
-                ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup Soal</button>`
-                : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis Soal</button>`;
+                ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup</button>`
+                : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
                 
             let btnToggleToken = u.statusToken === 'AKTIF'
-                ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Matikan Token</button>`
-                : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Aktifkan Token</button>`;
+                ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Mute</button>`
+                : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Token</button>`;
             
             let txtJadwal = u.jadwal ? u.jadwal.replace("T", " ") : "Tanpa Timer";
 
             tr.innerHTML = `
                 <td class="text-left">
                     <strong style="font-size:15px; color:var(--text-main);">${u.nama}</strong><br>
-                    <a href="${u.url}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;" title="Buka Link Ujian">🔗 Buka Google Form</a>
+                    <a href="${u.url}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;">🔗 Buka GForm</a>
                 </td>
                 <td><span style="background:#e0e7ff; color:#3730a3; padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px;">${u.targetTingkat}</span></td>
                 <td>${txtSoal}</td>
@@ -488,48 +508,42 @@ const WEB_APP_URL = _0x5b3e.join("");
         });
     }
 
-    // FUNGSI COPY TOKEN OTOMATIS SAAT BADGE DIKLIK
     function copyTokenText(text) {
         navigator.clipboard.writeText(text).then(() => {
             alert("📋 Token " + text + " berhasil disalin!");
         }).catch(err => {
-            alert("Gagal menyalin token secara otomatis, silakan salin manual: " + text);
+            alert("Silakan salin manual: " + text);
         });
     }
 
-    // FUNGSI MEMUAT DATA UJIAN KE FORMULIR INPUT (MEMULAI PROSES EDIT)
+    // PICU PROSES EDIT: FORM DI TAB 1 DIBUKA OTOMATIS SAAT TOMBOL EDIT DI TAB 2 DIKLIK
     function picuEditUjian(idBaris) {
-        // Cari data ujian yang cocok dari array sessionData di memori browser
         const ujian = sessionData.daftarUjian.find(u => u.idBaris == idBaris);
         if(!ujian) return;
 
-        // Isikan data ke elemen-elemen formulir input
         document.getElementById('editIdBaris').value = idBaris;
         document.getElementById('addNamaUjian').value = ujian.nama;
         document.getElementById('addUrlUjian').value = ujian.url;
         document.getElementById('addEntryNama').value = ujian.entryNama;
         document.getElementById('addEntryKelas').value = ujian.entryKelas;
         document.getElementById('addTargetTingkat').value = ujian.targetTingkat;
-        document.getElementById('addSecretKey').value = "DIKUNCI_EDIT"; // Placeholder proteksi key lama
+        document.getElementById('addSecretKey').value = "DIKUNCI_EDIT"; 
         document.getElementById('addDurasi').value = ujian.durasi;
         document.getElementById('addStatusSoal').value = ujian.status;
         document.getElementById('addStatusToken').value = ujian.statusToken;
         document.getElementById('addJadwalTampil').value = ujian.jadwal;
 
-        // Nonaktifkan kolom secret key saat mode edit untuk mencegah bug token acak baru
         document.getElementById('addSecretKey').disabled = true;
 
-        // Ubah Judul Form & Tombol Utama
         document.getElementById('formUjianTitle').innerText = "✏️ Mode Edit Ujian (ID Baris: " + idBaris + ")";
         document.getElementById('btnTambahUjian').innerText = "Simpan Perubahan Ujian";
         document.getElementById('btnTambahUjian').className = "btn btn-warning";
         document.getElementById('btnBatalEdit').style.display = "inline-flex";
 
-        // Scroll otomatis ke bagian form input agar fokus
-        document.getElementById('formUjianTitle').scrollIntoView({ behavior: 'smooth' });
+        // Alihkan halaman otomatis ke Halaman Input Formulir (Tab 1)
+        switchAdminTab('sectionInputSoal', document.getElementById('tabInput'));
     }
 
-    // RESET FORMULIR KEMBALI KE MODE TAMBAH
     function resetFormUjian() {
         document.getElementById('editIdBaris').value = "";
         document.getElementById('addNamaUjian').value = "";
@@ -550,7 +564,6 @@ const WEB_APP_URL = _0x5b3e.join("");
         document.getElementById('btnBatalEdit').style.display = "none";
     }
 
-    // LOGIKA HANDLING TOMBOL SIMPAN (TAMBAH MAUPUN PERBAIKAN SOAL)
     document.getElementById('btnTambahUjian').addEventListener('click', function() {
         const editId = document.getElementById('editIdBaris').value;
         const nama = document.getElementById('addNamaUjian').value.trim();
@@ -570,27 +583,21 @@ const WEB_APP_URL = _0x5b3e.join("");
             return; 
         }
 
-        // Jika mode tambah baru, secretKey wajib diisi. Jika edit, boleh dikunci.
         if(!editId && !secretKey) {
-            alert("Kunci Secret Key wajib diisi untuk setup acak token pertama kali!");
+            alert("Kunci Secret Key wajib diisi untuk setup token pertama kali!");
             return;
         }
 
-        // Deteksi Aksi Tambah atau Edit
         if(editId) {
-            // Mode EDIT: Kirim perintah hapus baris lama terlebih dahulu, lalu simpan yang baru
             if(!confirm("Simpan perubahan pada ujian ini?")) return;
             
             fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "deleteUjian", idBaris: editId }) })
             .then(() => {
-                // Gunakan secret key lama dari data sebelum diedit agar sinkronisasi token tidak kacau
                 const ujianLama = sessionData.daftarUjian.find(u => u.idBaris == editId);
-                secretKey = ujianLama ? ujianLama.tokenSoal : "SECRET99"; // Fallback ke key lama
-
+                secretKey = ujianLama ? ujianLama.tokenSoal : "SECRET99"; 
                 kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi);
             });
         } else {
-            // Mode TAMBAH BARU
             kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi);
         }
     });
@@ -608,6 +615,8 @@ const WEB_APP_URL = _0x5b3e.join("");
             alert("Data ujian berhasil diperbarui!");
             resetFormUjian();
             renderDaftarUjianAdmin(res.daftarUjian);
+            // Pindahkan halaman ke Tab 2 (Daftar Ujian & Token) setelah berhasil menyimpan
+            switchAdminTab('sectionDaftarSoal', document.getElementById('tabDaftar'));
         });
     }
 
