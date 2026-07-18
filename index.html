@@ -55,12 +55,10 @@
         .text-left { text-align: left; }
         .flex-btn-group { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 
-        /* Desain Baru Grid Monitor Token */
         .token-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 16px;
-            margin-bottom: 30px;
             margin-top: 10px;
         }
         .token-card {
@@ -195,13 +193,15 @@
         <h3>⚙️ Administrator Panel</h3>
         <p class="subtitle">Manajemen Lembar Soal, Filter Kelas Spesifik, Token & Scheduler</p>
         
+        <!-- NAVIGASI 4 HALAMAN MANDIRI -->
         <div class="admin-nav">
             <div class="nav-item active" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">1. Buat & Edit Ujian</div>
-            <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">2. Daftar Ujian & Token</div>
-            <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">3. Data & Nilai Siswa</div>
+            <div class="nav-item" id="tabToken" onclick="switchAdminTab('sectionTokenSoal', this)">2. Pusat Token Dinamis</div>
+            <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">3. Daftar Kontrol Ujian</div>
+            <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">4. Data & Nilai Siswa</div>
         </div>
 
-        <!-- TAB 1: FORMULIR INPUT -->
+        <!-- HALAMAN 1: FORMULIR INPUT & EDIT -->
         <div id="sectionInputSoal" class="admin-section active">
             <div class="form-group" style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid var(--border);">
                 <label id="formUjianTitle" style="font-size:18px; margin-bottom:16px; display: block; font-weight:700; color:var(--primary);">➕ Tambahkan Mata Ujian Baru</label>
@@ -266,24 +266,18 @@
             </div>
         </div>
 
-        <!-- TAB 2: SEKARANG TERBAGI MENJADI BADGE MONITOR TOKEN DAN TABEL DAFTAR -->
+        <!-- HALAMAN 2: PUSAT TOKEN DINAMIS -->
+        <div id="sectionTokenSoal" class="admin-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                <label style="font-weight:800; font-size:16px; color:var(--primary);">🔑 MONITOR TOKEN AKTIF HARI INI (KLIK UNTUK SALIN)</label>
+                <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()">🔄 Force Refresh Token</button>
+            </div>
+            <div class="token-grid" id="containerMonitorToken"></div>
+        </div>
+
+        <!-- HALAMAN 3: TABEL KONTROL DAFTAR UJIAN BERSIH -->
         <div id="sectionDaftarSoal" class="admin-section">
-            
-            <!-- BLOK KELOMPOK BARU: MONITORING TOKEN DINAMIS -->
-            <div style="display:flex; justify-content:between; align-items:center; margin-bottom: 8px;">
-                <label style="font-weight:800; font-size:16px; color:var(--primary);">🔑 PUSAT MONITOR TOKEN AKTIF (KLIK UNTUK SALIN)</label>
-                <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()" style="margin-left:auto;">🔄 Force Refresh Token</button>
-            </div>
-            
-            <!-- Grid Card Token yang Terpisah & Lebih Menarik -->
-            <div class="token-grid" id="containerMonitorToken">
-                <!-- Data Card diisi secara dinamis oleh JavaScript -->
-            </div>
-
-            <hr style="border:0; border-top:2px dashed var(--border); margin: 30px 0 20px 0;">
-
-            <!-- BLOK KELOMPOK KEDUA: TABEL MANAGEMEN BERSIH TANPA KOLOM TOKEN -->
-            <label style="font-weight:800; font-size:16px; color:var(--secondary); display:block; margin-bottom: 10px;">📋 TABEL MANAJEMEN RILIS & JADWAL SOAL</label>
+            <label style="font-weight:800; font-size:16px; color:var(--secondary); display:block; margin-bottom: 12px;">📋 DAFTAR KONTROL STATUS & JADWAL SOAL</label>
             <div class="table-responsive">
                 <table id="tabelDaftarUjian">
                     <thead>
@@ -300,7 +294,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: REKAP NILAI SISWA -->
+        <!-- HALAMAN 4: REKAP NILAI SISWA -->
         <div id="sectionSiswa" class="admin-section">
             <label style="font-weight:700;">Aksi Kontrol Nilai Rapor Siswa:</label>
             <div style="display:flex; gap:12px; margin:8px 0 16px 0;">
@@ -513,12 +507,11 @@
 
     function backToMenu() { document.getElementById('scoreArea').style.display = 'none'; document.getElementById('menuArea').style.display = 'block'; }
 
-    // FUNGSI UTAMA PENGATUR RENDERING PADA TAB 2 (MONITOR TOKEN CARDS & TABEL BERSIH)
+    // RENDER HALAMAN PUSAT TOKEN DAN HALAMAN TABEL DAFTAR KONTROL
     function renderDaftarUjianAdmin(daftarUjian) {
-        // 1. Render Blok Monitor Token Khusus Atas
+        // 1. ISI HALAMAN PUSAT TOKEN (TAB 2)
         const tokenContainer = document.getElementById("containerMonitorToken");
         tokenContainer.innerHTML = "";
-        
         let adaTokenAktif = false;
 
         daftarUjian.forEach(u => {
@@ -539,10 +532,10 @@
         });
 
         if(!adaTokenAktif) {
-            tokenContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 20px; background:#f1f5f9; border-radius:10px; color:var(--text-muted); font-weight:600; font-size:14px;">ℹ️ Saat ini tidak ada ujian dengan sistem token aktif.</div>`;
+            tokenContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; background:#f1f5f9; border-radius:10px; color:var(--text-muted); font-weight:600; font-size:14px;">ℹ️ Saat ini tidak ada ujian dengan sistem token aktif.</div>`;
         }
 
-        // 2. Render Blok Tabel Kontrol Manajemen Ujian Bawah
+        // 2. ISI HALAMAN TABEL DAFTAR KONTROL (TAB 3)
         const tbody = document.querySelector("#tabelDaftarUjian tbody");
         tbody.innerHTML = "";
         
