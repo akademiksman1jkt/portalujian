@@ -270,47 +270,92 @@ const WEB_APP_URL = _0x5b3e.join("");
         element.classList.add('active');
     }
 
+    // LOGIKA LOGIN DENGAN SISTEM AUTO-RETRY ANTISIPASI LONJAKAN TRAFIK
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const user = document.getElementById('username').value.trim();
         const pass = document.getElementById('password').value.trim();
         
-        document.getElementById('btnSubmit').disabled = true;
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('errorMessage').style.display = 'none';
+        const btnSubmit = document.getElementById('btnSubmit');
+        const loadingDiv = document.getElementById('loading');
+        const errDiv = document.getElementById('errorMessage');
 
-        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "login", username: user, password: pass }) })
-        .then(res => res.json())
-        .then(res => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('btnSubmit').disabled = false;
+        btnSubmit.disabled = true;
+        loadingDiv.style.display = 'block';
+        errDiv.style.display = 'none';
 
-            if(res.success) {
-                document.getElementById('loginArea').style.display = 'none';
-                sessionData = res;
-                
-                if(res.role === "admin") {
-                    document.getElementById('adminArea').style.display = 'block';
-                    renderTableAdmin(res.columns, res.siswa);
-                    renderDaftarUjianAdmin(res.daftarUjian);
-                } else {
-                    document.getElementById('menuArea').style.display = 'block';
-                    document.getElementById('namaSiswa').innerText = res.nama;
-                    document.getElementById('kelasSiswaBadge').innerText = res.kelas;
+        let attempt = 0;
+        const maxAttempts = 5; // Coba maksimal 5 kali sebelum menyerah
+
+        function kirimPermintaanLogin() {
+            attempt++;
+            if (attempt > 1) {
+                loadingDiv.innerText = `Server sibuk, mencoba kembali secara otomatis (Upaya ${attempt}/${maxAttempts})...`;
+            } else {
+                loadingDiv.innerText = "Memproses sinkronisasi data...";
+            }
+
+            fetch(WEB_APP_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: "login", username: user, password: pass }),
+                // Batasi waktu tunggu (timeout) respons agar tidak hang selamanya
+                signal: AbortSignal.timeout(10000) 
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Server Error " + res.status);
+                return res.json();
+            })
+            .then(res => {
+                loadingDiv.style.display = 'none';
+                btnSubmit.disabled = false;
+
+                if(res.success) {
+                    document.getElementById('loginArea').style.display = 'none';
+                    sessionData = res;
                     
-                    populateDropdownSiswa(res.daftarUjian);
-                    setupTokenListener();
-
-                    if(res.isReleased) {
-                        document.getElementById('btnLihatNilai').style.display = 'block';
-                        document.getElementById('infoBelumRilis').style.display = 'none';
+                    if(res.role === "admin") {
+                        document.getElementById('adminArea').style.display = 'block';
+                        renderTableAdmin(res.columns, res.siswa);
+                        renderDaftarUjianAdmin(res.daftarUjian);
                     } else {
-                        document.getElementById('btnLihatNilai').style.display = 'none';
-                        document.getElementById('infoBelumRilis').style.display = 'block';
+                        document.getElementById('menuArea').style.display = 'block';
+                        document.getElementById('namaSiswa').innerText = res.nama;
+                        document.getElementById('kelasSiswaBadge').innerText = res.kelas;
+                        
+                        populateDropdownSiswa(res.daftarUjian);
+                        setupTokenListener();
+
+                        if(res.isReleased) {
+                            document.getElementById('btnLihatNilai').style.display = 'block';
+                            document.getElementById('infoBelumRilis').style.display = 'none';
+                        } else {
+                            document.getElementById('btnLihatNilai').style.display = 'none';
+                            document.getElementById('infoBelumRilis').style.display = 'block';
+                        }
                     }
+                } else { 
+                    errDiv.style.display = 'block'; 
+                    errDiv.innerText = "Username atau Password salah!";
                 }
-            } else { document.getElementById('errorMessage').style.display = 'block'; }
-        });
+            })
+            .catch(err => {
+                console.warn(`Upaya login ${attempt} gagal:`, err);
+                if (attempt < maxAttempts) {
+                    // Jeda acak (random delay) antara 1.5 s.d 4 detik sebelum mencoba kembali.
+                    // Ini penting agar ratusan perangkat tidak menembak server secara bersamaan lagi.
+                    const jedaAcak = Math.floor(Math.random() * 2500) + 1500;
+                    setTimeout(kirimPermintaanLogin, jedaAcak);
+                } else {
+                    loadingDiv.style.display = 'none';
+                    btnSubmit.disabled = false;
+                    errDiv.style.display = 'block';
+                    errDiv.innerText = "Koneksi server padat. Silakan klik 'Masuk ke Sistem' lagi setelah beberapa saat.";
+                }
+            });
+        }
+
+        // Mulai eksekusi login pertama
+        kirimPermintaanLogin();
     });
 
     function populateDropdownSiswa(daftarUjian) {
