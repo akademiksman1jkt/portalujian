@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Ujian Modern - Target Spesifik Kelas</title>
+    <title>Portal Ujian SMAN 1 Jakarta</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -175,20 +175,20 @@
     
     <!-- 1. FORM LOGIN -->
     <div id="loginArea">
-        <h2>Portal Ujian Online</h2>
-        <p class="subtitle">Silakan masuk untuk memulai ujian atau manajemen sistem</p>
+        <h2>Portal Ujian SMAN 1 Jakarta</h2>
+        <p class="subtitle">Silakan masuk untuk memulai ujian</p>
         <form id="loginForm">
             <div class="form-group">
                 <label>Username / NISN</label>
-                <input type="text" id="username" placeholder="Masukkan NISN atau ID Admin" required autocomplete="off">
+                <input type="text" id="username" placeholder="Masukkan NISN" required autocomplete="off">
             </div>
             <div class="form-group">
                 <label>Password</label>
                 <input type="password" id="password" placeholder="Masukkan password" required>
             </div>
-            <button type="submit" class="btn btn-primary" id="btnSubmit" style="width:100%">Masuk ke Sistem</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmit" style="width:100%">Masuk</button>
         </form>
-        <div id="loading" style="text-align:center; margin-top: 10px;">Memproses sinkronisasi data...</div>
+        <div id="loading" style="text-align:center; margin-top: 10px;">Memproses ...</div>
         <div id="errorMessage" style="text-align:center; margin-top: 10px; color: var(--danger); font-weight: 700; display: none;">Username atau Password salah!</div>
     </div>
 
@@ -205,21 +205,21 @@
         </div>
 
         <div class="form-group" id="boxTokenSiswa" style="display:none; background:#f1f5f9; padding:12px; border-radius:10px;">
-            <label style="color:var(--danger)">🔑 Ujian ini memerlukan Token Dinamis Aktif:</label>
+            <label style="color:var(--danger)">🔑 Ujian ini memerlukan Token Aktif:</label>
             <input type="text" id="inputTokenSiswa" placeholder="Masukkan Token 6 Digit Terbaru" style="background:white;" maxlength="6">
         </div>
 
         <button class="btn btn-primary" id="btnMulaiUjian" style="width:100%; margin-top:10px;">Mulai Ujian Terpilih</button>
         <button class="btn btn-success" id="btnLihatNilai" style="width:100%; margin-top:10px;">Lihat Rilis Nilai</button>
         <div id="infoBelumRilis" style="background:#fffbeb; color:#b45309; padding:12px; border-radius:10px; margin-top:12px; font-size:14px; border:1px solid #fef3c7;">
-            ℹ️ Catatan: Rekapitulasi nilai Anda belum dirilis oleh Guru.
+            ℹ️ Catatan: Rekapitulasi nilai Anda belum dirilis.
         </div>
         <button class="btn btn-secondary" onclick="window.location.reload();" style="width:100%; margin-top:20px;">Keluar Sistem</button>
     </div>
 
     <!-- 3. REKAP NILAI SISWA -->
     <div id="scoreArea">
-        <h3>Laporan Hasil Belajar</h3>
+        <h3>Nilai Ujian</h3>
         <p class="subtitle">Nama: <span id="namaSiswaNilai" style="font-weight:600;"></span> | Kelas: <span id="kelasSiswaNilai" style="font-weight:600;"></span></p>
         <div class="table-responsive">
             <table id="tabelNilaiSiswa">
@@ -232,12 +232,12 @@
 
     <!-- 4. PANEL KONTROL ADMIN -->
     <div id="adminArea">
-        <h3>⚙️ Administrator Panel</h3>
+        <h3>⚙️ Pengaturan Ujian</h3>
         <p class="subtitle">Manajemen Lembar Soal, Filter Kelas Spesifik, Token & Scheduler</p>
         
         <div class="admin-nav">
             <div class="nav-item active" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">1. Buat & Edit Ujian</div>
-            <div class="nav-item" id="tabToken" onclick="switchAdminTab('sectionTokenSoal', this)">2. Pusat Token Dinamis</div>
+            <div class="nav-item" id="tabToken" onclick="switchAdminTab('sectionTokenSoal', this)">2. Manajemen Token</div>
             <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">3. Daftar Kontrol Ujian</div>
             <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">4. Data & Nilai Siswa</div>
         </div>
@@ -255,7 +255,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Link Bersih Google Form (Berakhiran /viewform):</label>
+                    <label>Link Google Form (Gunakan link yang berakhiran /viewform):</label>
                     <input type="text" id="addUrlUjian" placeholder="https://docs.google.com/forms/d/.../viewform" style="background:white;">
                 </div>
                 
@@ -337,7 +337,7 @@
 
         <!-- HALAMAN 4: REKAP NILAI SISWA -->
         <div id="sectionSiswa" class="admin-section">
-            <label style="font-weight:700;">Aksi Kontrol Nilai Rapor Siswa:</label>
+            <label style="font-weight:700;">Aksi Kontrol Nilai Rapor Ujian:</label>
             <div style="display:flex; gap:12px; margin:8px 0 16px 0;">
                 <button class="btn btn-success" onclick="ubahStatusRilis('ALL', 'YA')" style="font-size:13px; padding: 8px 14px;">Buka Semua Nilai Rapor</button>
                 <button class="btn btn-danger" onclick="ubahStatusRilis('ALL', 'TIDAK')" style="font-size:13px; padding: 8px 14px;">Kunci Semua Nilai Rapor</button>
@@ -441,7 +441,7 @@
             if (attempt > 1) {
                 loadingDiv.innerText = `Server sibuk, mencoba kembali (Upaya ${attempt}/${maxAttempts})...`;
             } else {
-                loadingDiv.innerText = "Memproses sinkronisasi data...";
+                loadingDiv.innerText = "Memuat ...";
             }
 
             fetch(WEB_APP_URL, { 
@@ -746,7 +746,7 @@
         })
         .then(res => res.json())
         .then(res => {
-            tampilkanNotifikasi("Data ujian berhasil diperbarui ke server cloud!", "success", "Simpan Sukses");
+            tampilkanNotifikasi("Data ujian berhasil diperbarui!", "success", "Simpan Sukses");
             resetFormUjian();
             renderDaftarUjianAdmin(res.daftarUjian);
             switchAdminTab('sectionDaftarSoal', document.getElementById('tabDaftar'));
@@ -756,7 +756,7 @@
     // MODIFIKASI TERANYAR PENGIRIMAN ANTI-CORS PADA TOMBOL FORCE REFRESH TOKEN
     function refreshTokensAdmin() {
         // Tampilkan animasi loading modern di tengah layar
-        tampilkanNotifikasi("Sedang berkomunikasi dengan Server Google Workspace untuk merombak kode token...", "loading", "Sinkronisasi Server", false);
+        tampilkanNotifikasi("Memuat ...", "loading", "Sinkronisasi Server", false);
         
         // Gunakan format URLSearchParams agar lolos mutlak dari pemblokiran CORS browser
         const dataForm = new URLSearchParams();
@@ -776,7 +776,7 @@
             renderDaftarUjianAdmin(res.daftarUjian);
             // Munculkan notifikasi sukses tengah layar yang estetis
             setTimeout(() => {
-                tampilkanNotifikasi("Token dinamis baru berhasil diacak dan ditulis ke Google Sheets secara instan!", "success", "Refresh Sukses");
+                tampilkanNotifikasi("Pembaruan token berhasil!", "success", "Refresh Sukses");
             }, 300);
         })
         .catch(err => {
