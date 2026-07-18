@@ -685,12 +685,32 @@ const WEB_APP_URL = _0x5b3e.join("");
     }
 
     function refreshTokensAdmin() {
-        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "getRefreshUjian" }) })
-        .then(res => res.json()).then(res => {
-            renderDaftarUjianAdmin(res.daftarUjian);
-            alert("Token dinamis berhasil di-refresh!");
-        });
-    }
+    alert("Mencoba menghubungi server Google...");
+    
+    // Ubah pengiriman menjadi format URLSearchParams agar lolos dari blokir CORS browser
+    const dataForm = new URLSearchParams();
+    dataForm.append("action", "getRefreshUjian");
+
+    fetch(WEB_APP_URL, { 
+        method: 'POST', 
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: dataForm
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Respons server gagal");
+        return res.json();
+    })
+    .then(res => {
+        renderDaftarUjianAdmin(res.daftarUjian);
+        alert("Token dinamis berhasil di-refresh!");
+    })
+    .catch(err => {
+        console.error("Eror detail:", err);
+        alert("Gagal memproses token: " + err.message + "\nPeriksa kembali log Apps Script Anda.");
+    });
+}
 
     function toggleSoal(idBaris, statusBaru) {
         fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleSoal", idBaris: idBaris, status: statusBaru }) })
