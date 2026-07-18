@@ -34,10 +34,15 @@
         .btn { padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
         .btn-sm { padding: 8px 12px; font-size: 12px; border-radius: 8px; width: auto; }
         .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
         .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: var(--success-hover); }
         .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: var(--danger-hover); }
         .btn-warning { background-color: var(--warning); color: white; }
+        .btn-warning:hover { background-color: var(--warning-hover); }
         .btn-secondary { background-color: var(--secondary); color: white; }
+        .btn-secondary:hover { background-color: var(--secondary-hover); }
         
         #menuArea, #scoreArea, #examArea, #adminArea, #btnLihatNilai, #infoBelumRilis { display: none; }
         
@@ -125,9 +130,46 @@
         #examArea { width: 100%; flex-grow: 1; flex-direction: column; }
         iframe { width: 100%; height: 100%; border: none; flex-grow: 1; }
         .exam-header { display: flex; justify-content: space-between; align-items: center; background: #111827; color: white; padding: 16px 24px; }
+
+        /* CSS BARU UNTUK CUSTOM NOTIFICATION DI TENGAH LAYAR */
+        .custom-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center; z-index: 99999;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+        }
+        .custom-modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .custom-modal-box {
+            background: #ffffff; border-radius: 16px; padding: 28px 24px;
+            width: 90%; max-width: 400px; text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(0.9); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .custom-modal-overlay.active .custom-modal-box { transform: scale(1); }
+        .modal-icon-circle {
+            width: 56px; height: 56px; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; margin: 0 auto 16px auto; font-size: 24px;
+        }
+        .modal-icon-circle.info { background: #e0e7ff; color: #4f46e5; }
+        .modal-icon-circle.success { background: #d1fae5; color: #10b981; }
+        .modal-icon-circle.danger { background: #fee2e2; color: #ef4444; }
+        .modal-icon-circle.loading { background: #f1f5f9; color: #64748b; animation: pulse-anim 1.5s infinite ease-in-out; }
+        .custom-modal-box h4 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .custom-modal-box p { font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 20px; word-break: break-word; }
+        @keyframes pulse-anim { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; transform: scale(1.05); } }
     </style>
 </head>
 <body>
+
+<!-- BLOK LAYOUT BARU: NOTIFIKASI ELEGAN PROFESIONAL DI TENGAH LAYAR -->
+<div class="custom-modal-overlay" id="customAlertOverlay">
+    <div class="custom-modal-box">
+        <div class="modal-icon-circle info" id="modalIcon">ℹ️</div>
+        <h4 id="modalTitle">Pemberitahuan</h4>
+        <p id="modalMessage">Pesan notifikasi di sini...</p>
+        <button class="btn btn-primary" id="btnModalClose" style="width: 100%; padding: 11px;" onclick="tutupNotifikasi()">Mengerti</button>
+    </div>
+</div>
 
 <div class="container" id="mainContainer">
     
@@ -193,7 +235,6 @@
         <h3>⚙️ Administrator Panel</h3>
         <p class="subtitle">Manajemen Lembar Soal, Filter Kelas Spesifik, Token & Scheduler</p>
         
-        <!-- NAVIGASI 4 HALAMAN MANDIRI -->
         <div class="admin-nav">
             <div class="nav-item active" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">1. Buat & Edit Ujian</div>
             <div class="nav-item" id="tabToken" onclick="switchAdminTab('sectionTokenSoal', this)">2. Pusat Token Dinamis</div>
@@ -326,20 +367,50 @@
 </div>
 
 <script>
+    // URL WEB APP APPS SCRIPT DARI AKUN WORKSPACE BELAJAR.ID
     const _0x5b3e = [
-    "\x68\x74\x74\x70\x73\x3a\x2f\x2f\x73\x63\x72\x69\x70\x74\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d", // https://script.google.com
-    "\x2f\x6d\x61\x63\x72\x6f\x73\x2f\x73\x2f",                                                         // /macros/s/
-    "\x41\x4b\x66\x79\x63\x62\x7a\x5f\x67\x47\x61\x65\x6a\x36\x65\x64\x67\x31\x4e\x4f\x77\x66\x37\x32", // Bagian ID 1
-    "\x78\x68\x5f\x46\x5a\x4a\x37\x30\x62\x38\x49\x77\x66\x32\x56\x46\x4d\x68\x67\x6e\x47\x67\x42\x6a", // Bagian ID 2
-    "\x75\x64\x32\x4c\x6d\x47\x4a\x69\x2d\x76\x31\x48\x56\x64\x61\x68\x53\x31\x6f\x37\x4e\x6f\x79\x69", // Bagian ID 3
-    "\x48\x51",                                                                                         // Bagian ID 4
-    "\x2f\x65\x78\x65\x63"                                                                             // /exec
-];
-
-// Menggabungkan kembali potongan enkripsi di atas menjadi URL utuh saat sistem berjalan
-const WEB_APP_URL = _0x5b3e.join("");
+        "\x68\x74\x74\x70\x73\x3a\x2f\x2f\x73\x63\x72\x69\x70\x74\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d", 
+        "\x2f\x6d\x61\x63\x72\x6f\x73\x2f\x73\x2f",                                                         
+        "\x41\x4b\x66\x79\x63\x62\x7a\x5f\x67\x47\x61\x65\x6a\x36\x65\x64\x67\x31\x4e\x4f\x77\x66\x37\x32", 
+        "\x78\x68\x5f\x46\x5a\x4a\x37\x30\x62\x38\x49\x77\x66\x32\x56\x46\x4d\x68\x67\x6e\x47\x67\x42\x6a", 
+        "\x75\x64\x32\x4c\x6d\x47\x4a\x69\x2d\x76\x31\x48\x56\x64\x61\x68\x53\x31\x6f\x37\x4e\x6f\x79\x69", 
+        "\x48\x51",                                                                                         
+        "\x2f\x65\x78\x65\x63"                                                                             
+    ];
+    const WEB_APP_URL = _0x5b3e.join("");
     
     let sessionData = {};
+
+    // LOGIKA DI TENGAH LAYAR UNTUK PENGGANTI ALERT() BAWAN BROWSER YANG KAKU
+    function tampilkanNotifikasi(pesan, jenis = 'info', judul = 'Pemberitahuan', butuhTombol = true) {
+        const overlay = document.getElementById('customAlertOverlay');
+        const iconBox = document.getElementById('modalIcon');
+        const titleBox = document.getElementById('modalTitle');
+        const msgBox = document.getElementById('modalMessage');
+        const closeBtn = document.getElementById('btnModalClose');
+        
+        // Atur tipe ikon visual & warna lingkar bulat
+        iconBox.className = "modal-icon-circle " + jenis;
+        if(jenis === 'success') iconBox.innerText = "✓";
+        else if(jenis === 'danger') iconBox.innerText = "✕";
+        else if(jenis === 'loading') iconBox.innerText = "⏳";
+        else iconBox.innerText = "ℹ️";
+        
+        titleBox.innerText = judul;
+        msgBox.innerText = pesan;
+        
+        if(butuhTombol) {
+            closeBtn.style.display = "block";
+        } else {
+            closeBtn.style.display = "none";
+        }
+        
+        overlay.classList.add('active');
+    }
+
+    function tutupNotifikasi() {
+        document.getElementById('customAlertOverlay').classList.remove('active');
+    }
 
     function switchAdminTab(sectionId, element) {
         document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
@@ -466,14 +537,14 @@ const WEB_APP_URL = _0x5b3e.join("");
         const selectBox = document.getElementById('selectUjianSiswa');
         const selectedIndex = selectBox.selectedIndex;
         
-        if (selectedIndex === 0) { alert("Silakan pilih mata ujian!"); return; }
+        if (selectedIndex === 0) { tampilkanNotifikasi("Silakan pilih mata ujian terlebih dahulu!", "info", "Pilih Ujian"); return; }
         
         const ujianTerpilih = sessionData.daftarUjian[selectedIndex - 1];
         
         if(ujianTerpilih.statusToken === "AKTIF") {
             const tokenInput = document.getElementById('inputTokenSiswa').value.trim().toUpperCase();
             if(tokenInput !== ujianTerpilih.tokenSoal) {
-                alert("⚠️ Token kedaluwarsa atau salah! Silakan hubungi pengawas.");
+                tampilkanNotifikasi("⚠️ Token kedaluwarsa atau salah! Silakan periksa kembali atau hubungi pengawas ruangan.", "danger", "Token Salah");
                 return;
             }
         }
@@ -510,7 +581,6 @@ const WEB_APP_URL = _0x5b3e.join("");
 
     // RENDER HALAMAN PUSAT TOKEN DAN HALAMAN TABEL DAFTAR KONTROL
     function renderDaftarUjianAdmin(daftarUjian) {
-        // 1. ISI HALAMAN PUSAT TOKEN (TAB 2)
         const tokenContainer = document.getElementById("containerMonitorToken");
         tokenContainer.innerHTML = "";
         let adaTokenAktif = false;
@@ -536,7 +606,6 @@ const WEB_APP_URL = _0x5b3e.join("");
             tokenContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; background:#f1f5f9; border-radius:10px; color:var(--text-muted); font-weight:600; font-size:14px;">ℹ️ Saat ini tidak ada ujian dengan sistem token aktif.</div>`;
         }
 
-        // 2. ISI HALAMAN TABEL DAFTAR KONTROL (TAB 3)
         const tbody = document.querySelector("#tabelDaftarUjian tbody");
         tbody.innerHTML = "";
         
@@ -577,9 +646,9 @@ const WEB_APP_URL = _0x5b3e.join("");
 
     function copyTokenText(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert("📋 Token [" + text + "] berhasil disalin ke clipboard!");
+            tampilkanNotifikasi("📋 Token [" + text + "] berhasil disalin ke clipboard!", "success", "Salin Sukses");
         }).catch(err => {
-            alert("Silakan salin manual: " + text);
+            tampilkanNotifikasi("Silakan salin manual: " + text, "info");
         });
     }
 
@@ -644,12 +713,12 @@ const WEB_APP_URL = _0x5b3e.join("");
         let secretKey = document.getElementById('addSecretKey').value.trim();
 
         if(!nama || !url || !entryNama || !entryKelas || !targetTingkat) { 
-            alert("Nama, Link, ID Entry, dan Target Kelas wajib diisi!"); 
+            tampilkanNotifikasi("Nama, Link, ID Entry, dan Target Kelas wajib diisi!", "danger", "Form Kosong"); 
             return; 
         }
 
         if(!editId && !secretKey) {
-            alert("Kunci Secret Key wajib diisi untuk setup token pertama kali!");
+            tampilkanNotifikasi("Kunci Secret Key wajib diisi untuk setup token pertama kali!", "danger", "Key Kosong");
             return;
         }
 
@@ -677,40 +746,43 @@ const WEB_APP_URL = _0x5b3e.join("");
         })
         .then(res => res.json())
         .then(res => {
-            alert("Data ujian berhasil diperbarui!");
+            tampilkanNotifikasi("Data ujian berhasil diperbarui ke server cloud!", "success", "Simpan Sukses");
             resetFormUjian();
             renderDaftarUjianAdmin(res.daftarUjian);
             switchAdminTab('sectionDaftarSoal', document.getElementById('tabDaftar'));
         });
     }
 
+    // MODIFIKASI TERANYAR PENGIRIMAN ANTI-CORS PADA TOMBOL FORCE REFRESH TOKEN
     function refreshTokensAdmin() {
-    alert("Mencoba menghubungi server Google...");
-    
-    // Ubah pengiriman menjadi format URLSearchParams agar lolos dari blokir CORS browser
-    const dataForm = new URLSearchParams();
-    dataForm.append("action", "getRefreshUjian");
+        // Tampilkan animasi loading modern di tengah layar
+        tampilkanNotifikasi("Sedang berkomunikasi dengan Server Google Workspace untuk merombak kode token...", "loading", "Sinkronisasi Server", false);
+        
+        // Gunakan format URLSearchParams agar lolos mutlak dari pemblokiran CORS browser
+        const dataForm = new URLSearchParams();
+        dataForm.append("action", "getRefreshUjian");
 
-    fetch(WEB_APP_URL, { 
-        method: 'POST', 
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: dataForm
-    })
-    .then(res => {
-        if (!res.ok) throw new Error("Respons server gagal");
-        return res.json();
-    })
-    .then(res => {
-        renderDaftarUjianAdmin(res.daftarUjian);
-        alert("Token dinamis berhasil di-refresh!");
-    })
-    .catch(err => {
-        console.error("Eror detail:", err);
-        alert("Gagal memproses token: " + err.message + "\nPeriksa kembali log Apps Script Anda.");
-    });
-}
+        fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dataForm
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Koneksi ditolak server");
+            return res.json();
+        })
+        .then(res => {
+            tutupNotifikasi();
+            renderDaftarUjianAdmin(res.daftarUjian);
+            // Munculkan notifikasi sukses tengah layar yang estetis
+            setTimeout(() => {
+                tampilkanNotifikasi("Token dinamis baru berhasil diacak dan ditulis ke Google Sheets secara instan!", "success", "Refresh Sukses");
+            }, 300);
+        })
+        .catch(err => {
+            tampilkanNotifikasi("Gagal melakukan forced refresh token: " + err.message, "danger", "Koneksi Gagal");
+        });
+    }
 
     function toggleSoal(idBaris, statusBaru) {
         fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "toggleSoal", idBaris: idBaris, status: statusBaru }) })
@@ -750,7 +822,10 @@ const WEB_APP_URL = _0x5b3e.join("");
 
     function ubahStatusRilis(targetUser, statusBaru) {
         fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updateRilis", username: targetUser, status: statusBaru }) })
-        .then(() => { alert("Status nilai diperbarui!"); window.location.reload(); });
+        .then(() => { 
+            tampilkanNotifikasi("Status rilis rapor siswa berhasil diubah!", "success", "Sukses");
+            setTimeout(() => { window.location.reload(); }, 1200);
+        });
     }
 </script>
 </body>
