@@ -485,25 +485,27 @@
                     sessionData = res;
                     
                     if(res.role === "admin") {
-                        document.getElementById('adminArea').style.display = 'block';
-                        renderTableAdmin(res.columns, res.siswa);
-                        renderDaftarUjianAdmin(res.daftarUjian);
-                    } else {
-                        document.getElementById('menuArea').style.display = 'block';
-                        document.getElementById('namaSiswa').innerText = res.nama;
-                        document.getElementById('kelasSiswaBadge').innerText = res.kelas;
-                        
-                        populateDropdownSiswa(res.daftarUjian);
-                        setupTokenListener();
-
-                        if(res.isReleased) {
-                            document.getElementById('btnLihatNilai').style.display = 'block';
-                            document.getElementById('infoBelumRilis').style.display = 'none';
-                        } else {
-                            document.getElementById('btnLihatNilai').style.display = 'none';
-                            document.getElementById('infoBelumRilis').style.display = 'block';
-                        }
-                    }
+    document.getElementById('adminArea').style.display = 'block';
+    renderTableAdmin(res.columns, res.siswa);
+    renderDaftarUjianAdmin(res.daftarUjian);
+} else {
+    document.getElementById('menuArea').style.display = 'block';
+    document.getElementById('namaSiswa').innerText = res.nama;
+    document.getElementById('kelasSiswaBadge').innerText = res.kelas;
+    
+    // BARU: Menangkap status fullscreen yang dikirim dari Google Sheets tadi
+    statusProteksiFullscreen = res.statusFullscreen || "TIDAK"; 
+    
+    populateDropdownSiswa(res.daftarUjian);
+    setupTokenListener();
+    if(res.isReleased) {
+        document.getElementById('btnLihatNilai').style.display = 'block';
+        document.getElementById('infoBelumRilis').style.display = 'none';
+    } else {
+        document.getElementById('btnLihatNilai').style.display = 'none';
+        document.getElementById('infoBelumRilis').style.display = 'block';
+    }
+}
                 } else { 
                     errDiv.style.display = 'block'; 
                     errDiv.innerText = "Username atau Password salah!";
@@ -1058,17 +1060,33 @@ function handleSearchSiswa() {
     // FUNGSI SAKELAR ADMIN UNTUK HIDUP/MATI PROTEKSI FULLSCREEN
     function toggleFiturFullscreen() {
         const btn = document.getElementById('btnToggleFullscreenGlobal');
+        let statusBaru = "TIDAK";
+
         if (statusProteksiFullscreen === "TIDAK") {
             statusProteksiFullscreen = "YA";
+            statusBaru = "YA";
             btn.className = "btn btn-success btn-sm";
             btn.innerText = "🟢 AKTIF";
-            tampilkanNotifikasi("Proteksi Layar Penuh Ujian berhasil DIAKTIFKAN. Siswa akan dipaksa Fullscreen saat klik Mulai Ujian.", "success", "Proteksi Aktif");
         } else {
             statusProteksiFullscreen = "TIDAK";
+            statusBaru = "TIDAK";
             btn.className = "btn btn-danger btn-sm";
             btn.innerText = "🔴 NONAKTIF";
-            tampilkanNotifikasi("Proteksi Layar Penuh Ujian dinonaktifkan. Siswa dapat menempuh ujian dalam mode jendela biasa.", "info", "Proteksi Mati");
         }
+
+        // MENEMBAK BACKEND UNTUK MENYIMPAN STATUS BARU KELAYAR UTAMA
+        const dataForm = new URLSearchParams();
+        dataForm.append("action", "simpanStatusFullscreen");
+        dataForm.append("status", statusBaru);
+
+        fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dataForm
+        })
+        .then(() => {
+            tampilkanNotifikasi("Status proteksi fullscreen berhasil disinkronkan ke server pusat!", "success", "Sukses");
+        });
     }
 
     // DETEKTOR KELUAR FULLSCREEN (HANYA MENGHUKUM JIKA DISETEL "YA" OLEH ADMIN)
