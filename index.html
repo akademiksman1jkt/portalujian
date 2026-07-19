@@ -579,24 +579,33 @@
 
     function backToMenu() { document.getElementById('scoreArea').style.display = 'none'; document.getElementById('menuArea').style.display = 'block'; }
 
-    // RENDER HALAMAN PUSAT TOKEN DAN HALAMAN TABEL DAFTAR KONTROL
+    // =========================================================================
+    // 1. GANTI FUNGSI RENDERDAFTARUJIANADMIN LAMA ANDA DENGAN BLOK KODE INI
+    // =========================================================================
+    let tokenTimerInterval = null; // Variabel penampung interval agar tidak menumpuk
+
     function renderDaftarUjianAdmin(daftarUjian) {
         const tokenContainer = document.getElementById("containerMonitorToken");
         tokenContainer.innerHTML = "";
         let adaTokenAktif = false;
+
+        // Bersihkan interval lama jika admin melakukan refresh data atau ganti tab
+        if (tokenTimerInterval) clearInterval(tokenTimerInterval);
 
         daftarUjian.forEach(u => {
             if(u.statusToken === 'AKTIF') {
                 adaTokenAktif = true;
                 let card = document.createElement('div');
                 card.className = "token-card";
+                
+                // Perubahan: Mengganti teks statis dengan elemen id unik penampung countdown
                 card.innerHTML = `
                     <h4>${u.nama}</h4>
                     <span class="target-badge">Target: ${u.targetTingkat}</span>
                     <div class="token-display-box" onclick="copyTokenText('${u.tokenSoal}')" title="Klik untuk menyalin token">
                         🔑 <span>${u.tokenSoal}</span>
                     </div>
-                    <div class="timer-info">🔄 Berubah Otomatis Tiap ${u.durasi} Mnt</div>
+                    <div class="timer-info" id="timer-ujian-${u.idBaris}">⏳ Menghitung waktu...</div>
                 `;
                 tokenContainer.appendChild(card);
             }
@@ -604,6 +613,9 @@
 
         if(!adaTokenAktif) {
             tokenContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; background:#f1f5f9; border-radius:10px; color:var(--text-muted); font-weight:600; font-size:14px;">ℹ️ Saat ini tidak ada ujian dengan sistem token aktif.</div>`;
+        } else {
+            // Panggil fungsi hitung mundur real-time jika ada token yang aktif
+            jalankanCountdownToken(daftarUjian);
         }
 
         const tbody = document.querySelector("#tabelDaftarUjian tbody");
@@ -642,6 +654,55 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+    // =========================================================================
+    // 2. PASTI KAN DUA FUNGSI BARU DI BAWAH INI JUGA IKUT DITEMPEL DI BAWAHNYA
+    // =========================================================================
+    function jalankanCountdownToken(daftarUjian) {
+        function updateDetik() {
+            const sekarang = new Date();
+            const sisaDetik = 60 - sekarang.getSeconds();
+            
+            daftarUjian.forEach(u => {
+                if (u.statusToken === 'AKTIF') {
+                    const elementTimer = document.getElementById(`timer-ujian-${u.idBaris}`);
+                    if (elementTimer) {
+                        const durasiMenit = parseInt(u.durasi) || 5;
+                        const menitSekarang = sekarang.getMinutes();
+                        const sisaMenit = (durasiMenit - 1) - (menitSekarang % durasiMenit);
+                        
+                        const teksDetik = sisaDetik < 10 ? "0" + sisaDetik : sisaDetik;
+                        const teksMenit = sisaMenit < 10 ? "0" + sisaMenit : sisaMenit;
+                        
+                        elementTimer.innerHTML = `🔄 Berubah otomatis dalam: <strong style="color:var(--primary); font-family:monospace; font-size:13px;">${teksMenit}:${teksDetik}</strong>`;
+                        
+                        // Ketika hitungan mundur menyentuh waktu habis, perbarui data dari server di latar belakang
+                        if (sisaMenit === 0 && sisaDetik === 1) {
+                            setTimeout(silentRefreshTokensAdmin, 1000);
+                        }
+                    }
+                }
+            });
+        }
+        
+        updateDetik();
+        tokenTimerInterval = setInterval(updateDetik, 1000);
+    }
+
+    function silentRefreshTokensAdmin() {
+        const dataForm = new URLSearchParams();
+        dataForm.append("action", "getRefreshUjian");
+
+        fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dataForm
+        })
+        .then(res => res.json())
+        .then(res => {
+            renderDaftarUjianAdmin(res.daftarUjian); // Perbarui visual kartu token secara senyap
+        })
+        .catch(err => console.warn("Gagal otomatis refresh token:", err));
     }
 
     function copyTokenText(text) {
