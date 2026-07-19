@@ -573,7 +573,7 @@
             
             tampilkanNotifikasi("Memverifikasi token terbaru dengan server pusat...", "loading", "Validasi Token", false);
 
-            // Tembak backend menggunakan database parameter login ulang instan (Anti-CORS)
+            // Tembak backend menggunakan parameter login instan (Anti-CORS)
             const dataForm = new URLSearchParams();
             dataForm.append("action", "login");
             dataForm.append("username", document.getElementById('username').value.trim());
@@ -634,11 +634,7 @@
         document.getElementById('examArea').style.display = 'flex';
         document.getElementById('formFrame').src = customFormUrl;
     }
-        .catch(err => {
-            tutupNotifikasi();
-            tampilkanNotifikasi("Gagal verifikasi token karena gangguan jaringan: " + err.message, "danger", "Koneksi Gagal");
-        });
-    });
+
     document.getElementById('btnLihatNilai').addEventListener('click', function() {
         document.getElementById('menuArea').style.display = 'none';
         document.getElementById('namaSiswaNilai').innerText = sessionData.nama;
@@ -655,7 +651,10 @@
         document.getElementById('scoreArea').style.display = 'block';
     });
 
-    function backToMenu() { document.getElementById('scoreArea').style.display = 'none'; document.getElementById('menuArea').style.display = 'block'; }
+    function backToMenu() { 
+        document.getElementById('scoreArea').style.display = 'none'; 
+        document.getElementById('menuArea').style.display = 'block'; 
+    }
 
     // =========================================================================
     // 1. GANTI FUNGSI RENDERDAFTARUJIANADMIN LAMA ANDA DENGAN BLOK KODE INI
