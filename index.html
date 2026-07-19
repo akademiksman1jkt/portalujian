@@ -735,28 +735,44 @@
     // =========================================================================
     // 2. PASTI KAN DUA FUNGSI BARU DI BAWAH INI JUGA IKUT DITEMPEL DI BAWAHNYA
     // =========================================================================
+    let tokenTimerInterval = null; // Penampung interval
+
     function jalankanCountdownToken(daftarUjian) {
+        // Bersihkan interval lama agar tidak menumpuk
+        if (tokenTimerInterval) clearInterval(tokenTimerInterval);
+
+        // Cari ujian yang status tokennya AKTIF untuk mengambil durasinya
+        const ujianAktif = daftarUjian.find(u => u.statusToken === 'AKTIF');
+        if (!ujianAktif) return;
+
+        // Ambil durasi menit dari spreadsheet (misal 5, 10, atau 30 menit), ubah ke detik
+        const durasiMenit = parseInt(ujianAktif.durasi) || 5;
+        
+        // Menggunakan hitung mundur dinamis sejak halaman dibuka/di-refresh
+        let totalDetik Tersisa = durasiMenit * 60; 
+
         function updateDetik() {
-            const sekarang = new Date();
-            const sisaDetik = 60 - sekarang.getSeconds();
+            totalDetikTersisa--;
             
+            if (totalDetikTersisa < 0) {
+                clearInterval(tokenTimerInterval);
+                // Ketika waktu habis, panggil fungsi untuk mengacak token baru secara resmi via backend
+                forcedRefreshTokenByTimer();
+                return;
+            }
+
+            let mins = Math.floor(totalDetikTersisa / 60);
+            let secs = totalDetikTersisa % 60;
+            
+            const teksMenit = mins < 10 ? "0" + mins : mins;
+            const teksDetik = secs < 10 ? "0" + secs : secs;
+
+            // Tampilkan ke kartu visual website
             daftarUjian.forEach(u => {
                 if (u.statusToken === 'AKTIF') {
                     const elementTimer = document.getElementById(`timer-ujian-${u.idBaris}`);
                     if (elementTimer) {
-                        const durasiMenit = parseInt(u.durasi) || 5;
-                        const menitSekarang = sekarang.getMinutes();
-                        const sisaMenit = (durasiMenit - 1) - (menitSekarang % durasiMenit);
-                        
-                        const teksDetik = sisaDetik < 10 ? "0" + sisaDetik : sisaDetik;
-                        const teksMenit = sisaMenit < 10 ? "0" + sisaMenit : sisaMenit;
-                        
                         elementTimer.innerHTML = `🔄 Berubah otomatis dalam: <strong style="color:var(--primary); font-family:monospace; font-size:13px;">${teksMenit}:${teksDetik}</strong>`;
-                        
-                        // Ketika hitungan mundur menyentuh waktu habis, perbarui data dari server di latar belakang
-                        if (sisaMenit === 0 && sisaDetik === 1) {
-                            setTimeout(silentRefreshTokensAdmin, 1000);
-                        }
                     }
                 }
             });
@@ -764,6 +780,23 @@
         
         updateDetik();
         tokenTimerInterval = setInterval(updateDetik, 1000);
+    }
+
+    // FUNGSI BARU: MEMAKSA SERVER MENGACAK TOKEN BARU KETIKA WAKTU HABIS
+    function forcedRefreshTokenByTimer() {
+        const dataForm = new URLSearchParams();
+        dataForm.append("action", "samakanSemuaToken"); // Memanggil fungsi acak massal di Apps Script
+
+        fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dataForm
+        })
+        .then(res => res.json())
+        .then(res => {
+            renderDaftarUjianAdmin(res.daftarUjian); // Tampilkan token baru yang sudah sinkron di spreadsheet
+        })
+        .catch(err => console.warn("Gagal otomatis merilis token baru:", err));
     }
 
     function silentRefreshTokensAdmin() {
