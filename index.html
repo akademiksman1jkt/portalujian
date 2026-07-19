@@ -567,57 +567,73 @@
         const ujianTerpilih = sessionData.daftarUjian[selectedIndex - 1];
         const tokenInput = document.getElementById('inputTokenSiswa').value.trim().toUpperCase();
 
-        // 1. TAMPILKAN LOADING PROSES CEK TOKEN LIVE KE SERVER
-        tampilkanNotifikasi("Memverifikasi token terbaru dengan server...", "loading", "Validasi Token", false);
-
-        // 2. KITA KIRIM CEK DATA LIVE MENGGUNAKAN FORM PARAMS (ANTI-CORS)
-        const dataForm = new URLSearchParams();
-        dataForm.append("action", "login"); // Kita manfaatkan jalur login ulang instan untuk ambil token teranyar server
-        dataForm.append("username", document.getElementById('username').value.trim());
-        dataForm.append("password", document.getElementById('password').value.trim());
-
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: dataForm
-        })
-        .then(res => res.json())
-        .then(res => {
-            tutupNotifikasi();
-            if(!res.success) {
-                tampilkanNotifikasi("Sesi masuk kedaluwarsa. Silakan muat ulang halaman.", "danger", "Eror Sistem");
-                return;
-            }
-
-            // Cari mata ujian yang sama dari data teranyar server
-            const ujianTerbaruServer = res.daftarUjian.find(u => u.nama === ujianTerpilih.nama);
+        // 1. JIKA TOKEN AKTIF, LAKUKAN PENGECEKAN LIVE KE SERVER SEBELUM MASUK SOAL
+        if (ujianTerpilih.statusToken === "AKTIF") {
+            if (!tokenInput) { tampilkanNotifikasi("Mata ujian ini terkunci. Silakan masukkan token terlebih dahulu!", "warning", "Token Kosong"); return; }
             
-            // Lakukan validasi menggunakan token paling segar dari Google Sheets
-            if (ujianTerbaruServer && ujianTerbaruServer.statusToken === "AKTIF") {
-                if (tokenInput !== ujianTerbaruServer.tokenSoal) {
-                    tampilkanNotifikasi("⚠️ Token kedaluwarsa atau salah! Periksa kembali atau hubungi pengawas.", "danger", "Token Salah");
+            tampilkanNotifikasi("Memverifikasi token terbaru dengan server pusat...", "loading", "Validasi Token", false);
+
+            // Tembak backend menggunakan database parameter login ulang instan (Anti-CORS)
+            const dataForm = new URLSearchParams();
+            dataForm.append("action", "login");
+            dataForm.append("username", document.getElementById('username').value.trim());
+            dataForm.append("password", document.getElementById('password').value.trim());
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: dataForm
+            })
+            .then(res => res.json())
+            .then(res => {
+                tutupNotifikasi();
+                if(!res.success) {
+                    tampilkanNotifikasi("Sesi masuk Anda telah kedaluwarsa. Silakan muat ulang halaman.", "danger", "Sesi Habis");
                     return;
                 }
-            }
 
-            // --- JIKA TOKEN BENAR, LANJUTKAN MASUK KE SOAL ---
-            if (statusProteksiFullscreen === "YA") {
-                const elem = document.documentElement;
-                if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-                else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-                else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-            }
+                // Perbarui daftar ujian lokal siswa dengan data teranyar dari server Google Sheets
+                sessionData.daftarUjian = res.daftarUjian;
+                const ujianTerbaruServer = res.daftarUjian.find(u => u.nama === ujianTerpilih.nama);
 
-            var idEntryNama = ujianTerpilih.entryNama || "entry.123456789";  
-            var idEntryKelas = ujianTerpilih.entryKelas || "entry.987654321"; 
-            var customFormUrl = ujianTerpilih.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
+                // Validasi token masukan siswa dengan token yang sedang aktif di spreadsheet saat ini
+                if (ujianTerbaruServer && tokenInput !== ujianTerbaruServer.tokenSoal) {
+                    tampilkanNotifikasi("⚠️ Token kedaluwarsa atau salah! Periksa kembali atau hubungi pengawas ruangan Anda.", "danger", "Token Salah");
+                    return;
+                }
 
-            document.getElementById('menuArea').style.display = 'none';
-            document.getElementById('mainContainer').classList.add('fullscreen');
-            document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujianTerpilih.nama;
-            document.getElementById('examArea').style.display = 'flex';
-            document.getElementById('formFrame').src = customFormUrl;
-        })
+                // Jika token lolos verifikasi server, lanjutkan masuk ke lembar soal
+                prosesMasukLembarSoal(ujianTerbaruServer);
+            })
+            .catch(err => {
+                tutupNotifikasi();
+                tampilkanNotifikasi("Gagal memverifikasi token akibat gangguan jaringan: " + err.message, "danger", "Koneksi Gagal");
+            });
+        } else {
+            // Jika mata ujian tidak mengaktifkan sistem token, langsung izinkan masuk
+            prosesMasukLembarSoal(ujianTerpilih);
+        }
+    });
+
+    // FUNGSI PEMBANTU UNTUK MEMBUKA IFRAME GOOGLE FORM
+    function prosesMasukLembarSoal(ujian) {
+        if (statusProteksiFullscreen === "YA") {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+        }
+
+        var idEntryNama = ujian.entryNama || "entry.123456789";  
+        var idEntryKelas = ujian.entryKelas || "entry.987654321"; 
+        var customFormUrl = ujian.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
+
+        document.getElementById('menuArea').style.display = 'none';
+        document.getElementById('mainContainer').classList.add('fullscreen');
+        document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujian.nama;
+        document.getElementById('examArea').style.display = 'flex';
+        document.getElementById('formFrame').src = customFormUrl;
+    }
         .catch(err => {
             tutupNotifikasi();
             tampilkanNotifikasi("Gagal verifikasi token karena gangguan jaringan: " + err.message, "danger", "Koneksi Gagal");
