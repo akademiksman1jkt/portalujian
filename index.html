@@ -311,7 +311,10 @@
         <div id="sectionTokenSoal" class="admin-section">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
                 <label style="font-weight:800; font-size:16px; color:var(--primary);">🔑 MONITOR TOKEN AKTIF HARI INI (KLIK UNTUK SALIN)</label>
-                <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()">🔄 Force Refresh Token</button>
+                <div style="display:flex; gap:8px;">
+    <button class="btn btn-primary btn-sm" onclick="refreshTokensAdmin()">🔄 Acak Berbeda (Default)</button>
+    <button class="btn btn-warning btn-sm" onclick="samakanSemuaTokenAdmin()" style="background:#d97706;">🔑 Samakan Semua Token Soal</button>
+</div>
             </div>
             <div class="token-grid" id="containerMonitorToken"></div>
         </div>
@@ -842,6 +845,33 @@
         })
         .catch(err => {
             tampilkanNotifikasi("Gagal melakukan forced refresh token: " + err.message, "danger", "Koneksi Gagal");
+        });
+    }
+    // FUNGSI BARU: MENEMBAK BACKEND UNTUK MENYAMAKAN SEMUA TOKEN
+    function samakanSemuaTokenAdmin() {
+        tampilkanNotifikasi("Sedang menyamakan semua token mata ujian menjadi satu kode...", "loading", "Proses Massal", false);
+        
+        const dataForm = new URLSearchParams();
+        dataForm.append("action", "samakanSemuaToken"); // Memanggil fungsi jalur 2 di Apps Script
+
+        fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: dataForm
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Gagal terhubung ke server");
+            return res.json();
+        })
+        .then(res => {
+            tutupNotifikasi();
+            renderDaftarUjianAdmin(res.daftarUjian);
+            setTimeout(() => {
+                tampilkanNotifikasi("Semua mata ujian aktif kini berhasil disamakan dengan satu token tunggal!", "success", "Sinkronisasi Sukses");
+            }, 300);
+        })
+        .catch(err => {
+            tampilkanNotifikasi("Gagal menyamakan token: " + err.message, "danger", "Koneksi Gagal");
         });
     }
 
