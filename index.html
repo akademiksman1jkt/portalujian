@@ -235,14 +235,14 @@
         <p class="subtitle">Manajemen Lembar Soal, Filter Kelas Spesifik, Token & Scheduler</p>
         
         <div class="admin-nav">
-            <div class="nav-item active" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">1. Buat & Edit Ujian</div>
-            <div class="nav-item" id="tabToken" onclick="switchAdminTab('sectionTokenSoal', this)">2. Manajemen Token</div>
-            <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">3. Daftar Kontrol Ujian</div>
-            <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">4. Data & Nilai Siswa</div>
-        </div>
+        <div class="nav-item active" id="tabToken" onclick="switchAdminTab('sectionTokenSoal', this)">1. Manajemen Token</div>
+        <div class="nav-item" id="tabInput" onclick="switchAdminTab('sectionInputSoal', this)">2. Buat & Edit Ujian</div>
+        <div class="nav-item" id="tabDaftar" onclick="switchAdminTab('sectionDaftarSoal', this)">3. Daftar Kontrol Ujian</div>
+        <div class="nav-item" onclick="switchAdminTab('sectionSiswa', this)">4. Data & Nilai Siswa</div>
+</div>
 
         <!-- HALAMAN 1: FORMULIR INPUT & EDIT -->
-        <div id="sectionInputSoal" class="admin-section active">
+        <div id="sectionInputSoal" class="admin-section">
             <div class="form-group" style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid var(--border);">
                 <label id="formUjianTitle" style="font-size:18px; margin-bottom:16px; display: block; font-weight:700; color:var(--primary);">➕ Tambahkan Mata Ujian Baru</label>
                 
@@ -307,7 +307,7 @@
         </div>
 
         <!-- HALAMAN 2: PUSAT TOKEN DINAMIS -->
-        <div id="sectionTokenSoal" class="admin-section">
+        <div id="sectionTokenSoal" class="admin-section active">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
                 <label style="font-weight:800; font-size:16px; color:var(--primary);">🔑 MONITOR TOKEN AKTIF HARI INI (KLIK UNTUK SALIN)</label>
                 <div style="display:flex; gap:8px;">
