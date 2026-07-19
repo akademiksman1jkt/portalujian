@@ -659,7 +659,7 @@
     // =========================================================================
     // 1. GANTI FUNGSI RENDERDAFTARUJIANADMIN LAMA ANDA DENGAN BLOK KODE INI
     // =========================================================================
-    let tokenTimerInterval = null; // Variabel penampung interval agar tidak menumpuk
+    let tokenTimerInterval = null; // Cukup deklarasikan SATU KALI di sini
 
     function renderDaftarUjianAdmin(daftarUjian) {
         const tokenContainer = document.getElementById("containerMonitorToken");
@@ -675,7 +675,7 @@
                 let card = document.createElement('div');
                 card.className = "token-card";
                 
-                // Perubahan: Mengganti teks statis dengan elemen id unik penampung countdown
+                // Mengganti teks statis dengan elemen id unik penampung countdown
                 card.innerHTML = `
                     <h4>${u.nama}</h4>
                     <span class="target-badge">Target: ${u.targetTingkat}</span>
@@ -696,46 +696,44 @@
         }
 
         const tbody = document.querySelector("#tabelDaftarUjian tbody");
-        tbody.innerHTML = "";
-        
-        daftarUjian.forEach(u => {
-            let tr = document.createElement('tr');
-            let txtSoal = u.status === 'YA' ? '<span style="color:var(--success); font-weight:700;">🟢 Aktif</span>' : '<span style="color:var(--text-muted);">🔴 Tutup</span>';
+        if (tbody) {
+            tbody.innerHTML = "";
             
-            let btnToggleSoal = u.status === 'YA' 
-                ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup</button>`
-                : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
+            daftarUjian.forEach(u => {
+                let tr = document.createElement('tr');
+                let txtSoal = u.status === 'YA' ? '<span style="color:var(--success); font-weight:700;">🟢 Aktif</span>' : '<span style="color:var(--text-muted);">🔴 Tutup</span>';
                 
-            let btnToggleToken = u.statusToken === 'AKTIF'
-                ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Mute Token</button>`
-                : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Open Token</button>`;
-            
-            let txtJadwal = u.jadwal ? u.jadwal.replace("T", " ") : "Tanpa Timer";
+                let btnToggleSoal = u.status === 'YA' 
+                    ? `<button onclick="toggleSoal('${u.idBaris}', 'TIDAK')" class="btn btn-sm btn-secondary">Tutup</button>`
+                    : `<button onclick="toggleSoal('${u.idBaris}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
+                    
+                let btnToggleToken = u.statusToken === 'AKTIF'
+                    ? `<button onclick="toggleToken('${u.idBaris}', 'NONAKTIF')" class="btn btn-sm btn-secondary" style="background:#f59e0b; color:white;">Mute Token</button>`
+                    : `<button onclick="toggleToken('${u.idBaris}', 'AKTIF')" class="btn btn-sm btn-success" style="background:#d97706; color:white;">Open Token</button>`;
+                
+                let txtJadwal = u.jadwal ? u.jadwal.replace("T", " ") : "Tanpa Timer";
 
-            tr.innerHTML = `
-                <td class="text-left">
-                    <strong style="font-size:15px; color:var(--text-main);">${u.nama}</strong><br>
-                    <a href="${u.url}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;">🔗 Buka Link Asli GForm</a>
-                </td>
-                <td><span style="background:#f1f5f9; color:var(--text-main); padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px; border:1px solid var(--border);">${u.targetTingkat}</span></td>
-                <td>${txtSoal}</td>
-                <td><small style="font-weight:600; color:var(--text-muted);">${txtJadwal}</small></td>
-                <td>
-                    <div class="flex-btn-group">
-                        ${btnToggleSoal}
-                        ${btnToggleToken}
-                        <button onclick="picuEditUjian('${u.idBaris}')" class="btn btn-sm btn-warning">Edit</button>
-                        <button onclick="hapusUjian('${u.idBaris}')" class="btn btn-sm btn-danger">Hapus</button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+                tr.innerHTML = `
+                    <td class="text-left">
+                        <strong style="font-size:15px; color:var(--text-main);">${u.nama}</strong><br>
+                        <a href="${u.url}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; font-weight:600;">🔗 Buka Link Asli GForm</a>
+                    </td>
+                    <td><span style="background:#f1f5f9; color:var(--text-main); padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px; border:1px solid var(--border);">${u.targetTingkat}</span></td>
+                    <td>${txtSoal}</td>
+                    <td><small style="font-weight:600; color:var(--text-muted);">${txtJadwal}</small></td>
+                    <td>
+                        <div class="flex-btn-group">
+                            ${btnToggleSoal}
+                            ${btnToggleToken}
+                            <button onclick="picuEditUjian('${u.idBaris}')" class="btn btn-sm btn-warning">Edit</button>
+                            <button onclick="hapusUjian('${u.idBaris}')" class="btn btn-sm btn-danger">Hapus</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
     }
-    // =========================================================================
-    // 2. PASTI KAN DUA FUNGSI BARU DI BAWAH INI JUGA IKUT DITEMPEL DI BAWAHNYA
-    // =========================================================================
-    let tokenTimerInterval = null; // Penampung interval
 
     function jalankanCountdownToken(daftarUjian) {
         // Bersihkan interval lama agar tidak menumpuk
@@ -745,18 +743,18 @@
         const ujianAktif = daftarUjian.find(u => u.statusToken === 'AKTIF');
         if (!ujianAktif) return;
 
-        // Ambil durasi menit dari spreadsheet (misal 5, 10, atau 30 menit), ubah ke detik
+        // Ambil durasi menit dari spreadsheet, ubah ke detik
         const durasiMenit = parseInt(ujianAktif.durasi) || 5;
         
-        // Menggunakan hitung mundur dinamis sejak halaman dibuka/di-refresh
-        let totalDetik Tersisa = durasiMenit * 60; 
+        // PERBAIKAN: Nama variabel digabung tanpa spasi
+        let totalDetikTersisa = durasiMenit * 60; 
 
         function updateDetik() {
             totalDetikTersisa--;
             
             if (totalDetikTersisa < 0) {
                 clearInterval(tokenTimerInterval);
-                // Ketika waktu habis, panggil fungsi untuk mengacak token baru secara resmi via backend
+                // Ketika waktu habis, acak token baru secara resmi via backend
                 forcedRefreshTokenByTimer();
                 return;
             }
@@ -782,10 +780,10 @@
         tokenTimerInterval = setInterval(updateDetik, 1000);
     }
 
-    // FUNGSI BARU: MEMAKSA SERVER MENGACAK TOKEN BARU KETIKA WAKTU HABIS
+    // FUNGSI MEMAKSA SERVER MENGACAK TOKEN BARU KETIKA WAKTU HABIS
     function forcedRefreshTokenByTimer() {
         const dataForm = new URLSearchParams();
-        dataForm.append("action", "samakanSemuaToken"); // Memanggil fungsi acak massal di Apps Script
+        dataForm.append("action", "samakanSemuaToken"); 
 
         fetch(WEB_APP_URL, { 
             method: 'POST', 
@@ -794,7 +792,7 @@
         })
         .then(res => res.json())
         .then(res => {
-            renderDaftarUjianAdmin(res.daftarUjian); // Tampilkan token baru yang sudah sinkron di spreadsheet
+            renderDaftarUjianAdmin(res.daftarUjian); 
         })
         .catch(err => console.warn("Gagal otomatis merilis token baru:", err));
     }
@@ -810,7 +808,7 @@
         })
         .then(res => res.json())
         .then(res => {
-            renderDaftarUjianAdmin(res.daftarUjian); // Perbarui visual kartu token secara senyap
+            renderDaftarUjianAdmin(res.daftarUjian); 
         })
         .catch(err => console.warn("Gagal otomatis refresh token:", err));
     }
