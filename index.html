@@ -347,6 +347,17 @@
             </div>
             
             <label style="margin-top:20px; display:block; font-weight:700;">Monitoring Transkrip & Hak Akses Siswa:</label>
+            <!-- KONTROL PENCARIAN & HALAMAN (PAGINATION) -->
+<div class="table-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 8px; gap: 16px; flex-wrap: wrap;">
+    <div class="search-wrapper" style="position: relative; flex: 1; max-width: 320px;">
+        <input type="text" id="searchSiswaInput" placeholder="🔍 Cari Nama atau NISN..." oninput="handleSearchSiswa()" style="width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 14px; border: 1px solid var(--border); outline: none;">
+    </div>
+    <div class="pagination-controls" style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn btn-secondary btn-sm" id="btnPrevPage" onclick="changeSiswaPage(-1)">◀ Prev</button>
+        <span class="pagination-info" id="siswaPageInfo" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Halaman 1 dari 1</span>
+        <button class="btn btn-secondary btn-sm" id="btnNextPage" onclick="changeSiswaPage(1)">Next ▶</button>
+    </div>
+</div>
             <div class="table-responsive">
                 <table id="tabelSiswaAdmin">
                     <thead><tr id="headerAdmin"></tr></thead>
@@ -891,25 +902,104 @@
         .then(res => res.json()).then(res => { renderDaftarUjianAdmin(res.daftarUjian); });
     }
 
-    function renderTableAdmin(columns, siswaList) {
-        const trHeader = document.getElementById('headerAdmin');
-        trHeader.innerHTML = "<th>NISN</th><th>Nama</th><th>Kelas</th>";
-        columns.forEach(col => { let th = document.createElement('th'); th.innerText = col; trHeader.appendChild(th); });
-        trHeader.innerHTML += "<th>Status</th><th>Aksi</th>";
+    // 1. Definisikan variabel state di bagian atas tag <script> Anda
+let masterSiswaList = [];
+let filteredSiswaList = [];
+let currentSiswaPage = 1;
+const itemsPerPage = 50; // Menampilkan 50 siswa per halaman
+let masterColumns = [];
 
-        const tbody = document.querySelector("#tabelSiswaAdmin tbody"); tbody.innerHTML = "";
-        siswaList.forEach(s => {
-            let tr = document.createElement('tr');
-            let txtRilis = s.rilis.toUpperCase() === 'YA' ? '🟢 Rilis' : '🔴 Ditutup';
-            let btnAksi = s.rilis.toUpperCase() === 'YA' 
-                ? `<button onclick="ubahStatusRilis('${s.username}', 'TIDAK')" class="btn btn-sm btn-danger">Tutup</button>`
-                : `<button onclick="ubahStatusRilis('${s.username}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
-            let nilaiCells = "";
-            s.nilaiArray.forEach(val => { nilaiCells += `<td>${val || '-'}</td>`; });
-            tr.innerHTML = `<td>${s.username}</td><td class="text-left">${s.nama}</td><td>${s.kelas || '-'}</td>${nilaiCells}<td>${txtRilis}</td><td>${btnAksi}</td>`;
-            tbody.appendChild(tr);
+// 2. Ganti fungsi renderTableAdmin lama dengan logika pembagi halaman ini
+function renderTableAdmin(columns, siswaList) {
+    masterSiswaList = siswaList || [];
+    filteredSiswaList = [...masterSiswaList];
+    masterColumns = columns || [];
+    currentSiswaPage = 1; // Reset kembali ke halaman 1 tiap data dimuat ulang
+    
+    buildTableHeaderAdmin();
+    displaySiswaTablePage();
+}
+
+function buildTableHeaderAdmin() {
+    const trHeader = document.getElementById('headerAdmin');
+    trHeader.innerHTML = "<th>NISN</th><th>Nama</th><th>Kelas</th>";
+    masterColumns.forEach(col => { 
+        let th = document.createElement('th'); 
+        th.innerText = col; 
+        trHeader.appendChild(th); 
+    });
+    trHeader.innerHTML += "<th>Status</th><th>Aksi</th>";
+}
+
+function displaySiswaTablePage() {
+    const tbody = document.querySelector("#tabelSiswaAdmin tbody"); 
+    tbody.innerHTML = "";
+    
+    const totalItems = filteredSiswaList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    
+    if (currentSiswaPage > totalPages) currentSiswaPage = totalPages;
+    if (currentSiswaPage < 1) currentSiswaPage = 1;
+    
+    const startIndex = (currentSiswaPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    
+    // Update teks info halaman
+    document.getElementById('siswaPageInfo').innerText = `Halaman ${currentSiswaPage} dari ${totalPages} (Total: ${totalItems} Siswa)`;
+    
+    // Kunci tombol jika sudah di ujung halaman
+    document.getElementById('btnPrevPage').disabled = (currentSiswaPage === 1);
+    document.getElementById('btnNextPage').disabled = (currentSiswaPage === totalPages);
+
+    if (totalItems === 0) {
+        tbody.innerHTML = `<tr><td colspan="${masterColumns.length + 5}" style="color:var(--text-muted); padding:20px;">🔍 Tidak ditemukan data siswa.</td></tr>`;
+        return;
+    }
+
+    for (let i = startIndex; i < endIndex; i++) {
+        const s = filteredSiswaList[i];
+        let tr = document.createElement('tr');
+        let txtRilis = s.rilis.toUpperCase() === 'YA' ? '🟢 Rilis' : '🔴 Ditutup';
+        let btnAksi = s.rilis.toUpperCase() === 'YA' 
+            ? `<button onclick="ubahStatusRilis('${s.username}', 'TIDAK')" class="btn btn-sm btn-danger">Tutup</button>`
+            : `<button onclick="ubahStatusRilis('${s.username}', 'YA')" class="btn btn-sm btn-success">Rilis</button>`;
+        
+        let nilaiCells = "";
+        s.nilaiArray.forEach(val => { nilaiCells += `<td>${val || '-'}</td>`; });
+        
+        tr.innerHTML = `
+            <td>${s.username}</td>
+            <td class="text-left" style="font-weight:600;">${s.nama}</td>
+            <td>${s.kelas || '-'}</td>
+            ${nilaiCells}
+            <td><span style="font-weight:700;">${txtRilis}</span></td>
+            <td>${btnAksi}</td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+function changeSiswaPage(direction) {
+    currentSiswaPage += direction;
+    displaySiswaTablePage();
+}
+
+function handleSearchSiswa() {
+    const keyword = document.getElementById('searchSiswaInput').value.toLowerCase().trim();
+    
+    if (keyword === "") {
+        filteredSiswaList = [...masterSiswaList];
+    } else {
+        filteredSiswaList = masterSiswaList.filter(s => {
+            const matchNama = s.nama ? s.nama.toLowerCase().includes(keyword) : false;
+            const matchNisn = s.username ? s.username.toString().toLowerCase().includes(keyword) : false;
+            return matchNama || matchNisn;
         });
     }
+    
+    currentSiswaPage = 1;
+    displaySiswaTablePage();
+}
 
     function ubahStatusRilis(targetUser, statusBaru) {
         fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: "updateRilis", username: targetUser, status: statusBaru }) })
