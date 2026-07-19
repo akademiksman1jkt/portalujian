@@ -321,6 +321,16 @@
         <!-- HALAMAN 3: TABEL KONTROL DAFTAR UJIAN BERSIH -->
         <div id="sectionDaftarSoal" class="admin-section">
             <label style="font-weight:800; font-size:16px; color:var(--secondary); display:block; margin-bottom: 12px;">📋 DAFTAR KONTROL STATUS & JADWAL SOAL</label>
+            <!-- GLOBAL TOGGLE FULLSCREEN PROTEKSI -->
+<div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 14px; border-radius: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <strong style="color: #b45309; font-size: 15px;">🛡️ Proteksi Layar Penuh Ujian (Fullscreen Anti-Cheat)</strong>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Jika aktif, siswa dipaksa layar penuh dan otomatis keluar sesi ujian jika menekan ESC / membuka aplikasi lain.</p>
+    </div>
+    <div>
+        <button id="btnToggleFullscreenGlobal" class="btn btn-danger btn-sm" onclick="toggleFiturFullscreen()">🔴 NONAKTIF</button>
+    </div>
+</div>
             <div class="table-responsive">
                 <table id="tabelDaftarUjian">
                     <thead>
@@ -562,6 +572,14 @@
             }
         }
 
+        // --- CEK LOGIKA FULLSCREEN BERDASARKAN AKTIVASI ADMIN ---
+        if (statusProteksiFullscreen === "YA") {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+        }
+
         var idEntryNama = ujianTerpilih.entryNama || "entry.123456789";  
         var idEntryKelas = ujianTerpilih.entryKelas || "entry.987654321"; 
         
@@ -573,7 +591,6 @@
         document.getElementById('examArea').style.display = 'flex';
         document.getElementById('formFrame').src = customFormUrl;
     });
-
     document.getElementById('btnLihatNilai').addEventListener('click', function() {
         document.getElementById('menuArea').style.display = 'none';
         document.getElementById('namaSiswaNilai').innerText = sessionData.nama;
@@ -903,6 +920,7 @@
 
     // 1. Definisikan variabel state di bagian atas tag <script> Anda
 let masterSiswaList = [];
+let statusProteksiFullscreen = "TIDAK"; // Bawaan awal tidak aktif
 let filteredSiswaList = [];
 let currentSiswaPage = 1;
 const itemsPerPage = 50; // Menampilkan 50 siswa per halaman
@@ -1007,6 +1025,53 @@ function handleSearchSiswa() {
             setTimeout(() => { window.location.reload(); }, 1200);
         });
     }
+    // FUNGSI SAKELAR ADMIN UNTUK HIDUP/MATI PROTEKSI FULLSCREEN
+    function toggleFiturFullscreen() {
+        const btn = document.getElementById('btnToggleFullscreenGlobal');
+        if (statusProteksiFullscreen === "TIDAK") {
+            statusProteksiFullscreen = "YA";
+            btn.className = "btn btn-success btn-sm";
+            btn.innerText = "🟢 AKTIF";
+            tampilkanNotifikasi("Proteksi Layar Penuh Ujian berhasil DIAKTIFKAN. Siswa akan dipaksa Fullscreen saat klik Mulai Ujian.", "success", "Proteksi Aktif");
+        } else {
+            statusProteksiFullscreen = "TIDAK";
+            btn.className = "btn btn-danger btn-sm";
+            btn.innerText = "🔴 NONAKTIF";
+            tampilkanNotifikasi("Proteksi Layar Penuh Ujian dinonaktifkan. Siswa dapat menempuh ujian dalam mode jendela biasa.", "info", "Proteksi Mati");
+        }
+    }
+
+    // DETEKTOR KELUAR FULLSCREEN (HANYA MENGHUKUM JIKA DISETEL "YA" OLEH ADMIN)
+    function deteksiPerubahanLayar() {
+        const isNotFullscreen = !document.fullscreenElement && 
+                                !document.webkitFullscreenElement && 
+                                !document.msFullscreenElement;
+
+        const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+
+        // Penambahan syarat: statusProteksiFullscreen === "YA"
+        if (isNotFullscreen && sedangUjian && statusProteksiFullscreen === "YA") {
+            document.getElementById('formFrame').src = "";
+            document.getElementById('examArea').style.display = 'none';
+            document.getElementById('mainContainer').classList.remove('fullscreen');
+            
+            tampilkanNotifikasi(
+                "🚨 Sesi ujian Anda dibatalkan otomatis karena terdeteksi keluar dari mode layar penuh atau membuka aplikasi lain!", 
+                "danger", 
+                "Pelanggaran Terdeteksi", 
+                true
+            );
+
+            document.getElementById('btnModalClose').onclick = function() {
+                window.location.reload();
+            };
+        }
+    }
+
+    // Pasang event listener browser
+    document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
+    document.addEventListener('webkitfullscreenchange', deteksiPerubahanLayar);
+    document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
 </script>
 </body>
 </html>
