@@ -1218,21 +1218,24 @@ function handleSearchSiswa() {
 
     if (isNotFullscreen && sedangUjian && statusProteksiFullscreen === "YA") {
         
-        // 1. Sembunyikan lembar soal sementara demi keamanan
+        // 1. LANGSUNG PAKSA KEMBALI KE FULLSCREEN DALAM FRAKSI DETIK (TUTUP CELAH TAB)
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+
+        // 2. SEMBUNYIKAN SOAL SEMENTARA
         document.getElementById('formFrame').style.visibility = "hidden";
         
-        // 2. Munculkan Notifikasi Konfirmasi Pilihan
+        // 3. TAMPILKAN MODAL KONFIRMASI DALAM KONDISI TETAP FULLSCREEN
         tampilkanNotifikasi(
-            "Anda menekan ESC atau keluar dari mode Layar Penuh. Apakah Anda benar-benar ingin menghentikan dan keluar dari sesi ujian ini?", 
+            "🚨 Peringatan: Terdeteksi upaya menekan ESC / keluar layar penuh. Apakah Anda yakin ingin menghentikan dan keluar dari ujian?", 
             "warning", 
             "Konfirmasi Keluar Ujian", 
-            false // Matikan tombol close bawaan agar tidak bentrok
+            false
         );
 
-        // 3. Buat dua tombol pilihan (Keluar / Lanjutkan) secara dinamis di dalam kotak notifikasi
         const modalBox = document.querySelector('.custom-modal-box');
-        
-        // Hapus penampung tombol pilihan lama jika sebelumnya sudah ada (mencegah duplikat)
         const opsiLama = document.getElementById('boxOpsiKeluar');
         if(opsiLama) opsiLama.remove();
 
@@ -1248,31 +1251,18 @@ function handleSearchSiswa() {
         `;
         modalBox.appendChild(boxOpsi);
 
-        // PILIHAN A: Jika siswa memilih benar-benar ingin KELUAR (Hukuman/Selesai)
+        // OPSI A: Selesai & Keluar Sesi
         document.getElementById('btnKonfirmasiKeluar').onclick = function() {
             boxOpsi.remove();
-            clearInterval(siswaExamInterval);
-            document.getElementById('formFrame').src = "";
-            document.getElementById('examArea').style.display = 'none';
-            document.getElementById('mainContainer').classList.remove('fullscreen');
-            
-            tampilkanNotifikasi("Sesi ujian Anda telah dihentikan.", "danger", "Ujian Selesai", true);
-            document.getElementById('btnModalClose').onclick = function() { window.location.reload(); };
+            if (siswaExamInterval) clearInterval(siswaExamInterval);
+            window.location.reload();
         };
 
-        // PILIHAN B: Jika siswa TIDAK sengaja dan ingin KEMBALI ujian dengan layar penuh
+        // OPSI B: Lanjut Ujian (Layar Soal Dibuka Kembali)
         document.getElementById('btnKonfirmasiLanjut').onclick = function() {
             boxOpsi.remove();
             tutupNotifikasi();
-            
-            // Tampilkan kembali lembar soal
             document.getElementById('formFrame').style.visibility = "visible";
-            
-            // Paksa browser mengunci layar penuh kembali
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
         };
     }
 }
@@ -1423,11 +1413,53 @@ function handleSearchSiswa() {
     }
     // Fungsi konfirmasi pengaman agar siswa tidak tidak sengaja menekan tombol keluar
     function konfirmasiKeluarUjian() {
-        if(confirm("Apakah Anda yakin ingin keluar dari lembar ujian ini? Pastikan Anda sudah menekan tombol SUBMIT di dalam lembar soal terlebih dahulu.")) {
-            if (siswaExamInterval) clearInterval(siswaExamInterval);
-            window.location.reload();
-        }
-    }
+    // 1. Sembunyikan lembar soal sementara
+    document.getElementById('formFrame').style.visibility = "hidden";
+    
+    // 2. Tampilkan modal kustom menggantikan confirm() bawaan browser
+    tampilkanNotifikasi(
+        "Apakah Anda yakin ingin keluar dari lembar ujian ini? Pastikan Anda sudah menekan tombol SUBMIT di dalam lembar soal terlebih dahulu.", 
+        "warning", 
+        "Konfirmasi Keluar Ujian", 
+        false
+    );
+
+    const modalBox = document.querySelector('.custom-modal-box');
+    const opsiLama = document.getElementById('boxOpsiKeluar');
+    if(opsiLama) opsiLama.remove();
+
+    const boxOpsi = document.createElement('div');
+    boxOpsi.id = "boxOpsiKeluar";
+    boxOpsi.style.display = "flex";
+    boxOpsi.style.gap = "12px";
+    boxOpsi.style.marginTop = "20px";
+
+    boxOpsi.innerHTML = `
+        <button class="btn btn-danger" id="btnKonfirmasiKeluar" style="flex:1;">Ya, Keluar Ujian</button>
+        <button class="btn btn-success" id="btnKonfirmasiLanjut" style="flex:1;">Tidak, Lanjut Ujian</button>
+    `;
+    modalBox.appendChild(boxOpsi);
+
+    // Jika pilih Ya: Keluar dari ujian
+    document.getElementById('btnKonfirmasiKeluar').onclick = function() {
+        boxOpsi.remove();
+        if (siswaExamInterval) clearInterval(siswaExamInterval);
+        window.location.reload();
+    };
+
+    // Jika pilih Tidak: Batal keluar & lanjut pengerjaan
+    document.getElementById('btnKonfirmasiLanjut').onclick = function() {
+        boxOpsi.remove();
+        tutupNotifikasi();
+        document.getElementById('formFrame').style.visibility = "visible";
+        
+        // Kunci kembali ke mode fullscreen
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+    };
+}
 </script>
 </body>
 </html>
