@@ -1460,6 +1460,90 @@ function handleSearchSiswa() {
         else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
     };
 }
+
+// =========================================================================
+// ANTI CHEAT: DETEKSI ALT+TAB / PINDAH APLIKASI / PINDAH TAB BROWSER
+// =========================================================================
+function tanganiSiswaPindahAplikasi() {
+    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+
+    if (sedangUjian && statusProteksiFullscreen === "YA") {
+        
+        // 1. Sembunyikan lembar soal secara instan
+        document.getElementById('formFrame').style.visibility = "hidden";
+
+        // 2. Tampilkan Notifikasi Peringatan Pindah Aplikasi
+        tampilkanNotifikasi(
+            "🚨 Terdeteksi aktivitas berpindah tab/aplikasi (Alt+Tab)! Klik tombol di bawah untuk kembali mengunci layar ujian.", 
+            "danger", 
+            "Pelanggaran Terdeteksi", 
+            false
+        );
+
+        const modalBox = document.querySelector('.custom-modal-box');
+        const opsiLama = document.getElementById('boxOpsiKeluar');
+        if(opsiLama) opsiLama.remove();
+
+        const boxOpsi = document.createElement('div');
+        boxOpsi.id = "boxOpsiKeluar";
+        boxOpsi.style.display = "flex";
+        boxOpsi.style.gap = "12px";
+        boxOpsi.style.marginTop = "20px";
+
+        boxOpsi.innerHTML = `
+            <button class="btn btn-danger" id="btnKonfirmasiKeluar" style="flex:1;">Ya, Keluar Ujian</button>
+            <button class="btn btn-success" id="btnKonfirmasiLanjut" style="flex:1;">Kembali ke Ujian</button>
+        `;
+        modalBox.appendChild(boxOpsi);
+
+        // OPSI A: Jika pilih keluar
+        document.getElementById('btnKonfirmasiKeluar').onclick = function() {
+            boxOpsi.remove();
+            if (siswaExamInterval) clearInterval(siswaExamInterval);
+            window.location.reload();
+        };
+
+        // OPSI B: Jika pilih kembali ke ujian
+        document.getElementById('btnKonfirmasiLanjut').onclick = function() {
+            boxOpsi.remove();
+            tutupNotifikasi();
+            
+            // Tampilkan soal kembali
+            document.getElementById('formFrame').style.visibility = "visible";
+            
+            // Kunci layar penuh lagi
+            kunciLayarPenuhInstan();
+        };
+    }
+}
+
+// FUNGSI PEMBANTU MENGUNCI LAYAR PENUH
+function kunciLayarPenuhInstan() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+    else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+    else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+}
+
+// Pasang pendeteksi saat tab browser disembunyikan
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) {
+        tanganiSiswaPindahAplikasi();
+    }
+});
+
+// Pasang pendeteksi saat browser kembali mendapat fokus dari Alt+Tab
+window.addEventListener("focus", function() {
+    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+    if (sedangUjian && statusProteksiFullscreen === "YA") {
+        // Begitu siswa mengeklik browser kembali, layar langsung dipaksa Fullscreen seketika!
+        kunciLayarPenuhInstan();
+    }
+});
+
+window.addEventListener("blur", function() {
+    tanganiSiswaPindahAplikasi();
+});
 </script>
 </body>
 </html>
