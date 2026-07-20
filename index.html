@@ -1210,30 +1210,72 @@ function handleSearchSiswa() {
 
     // DETEKTOR KELUAR FULLSCREEN (HANYA MENGHUKUM JIKA DISETEL "YA" OLEH ADMIN)
     function deteksiPerubahanLayar() {
-        const isNotFullscreen = !document.fullscreenElement && 
-                                !document.webkitFullscreenElement && 
-                                !document.msFullscreenElement;
+    const isNotFullscreen = !document.fullscreenElement && 
+                            !document.webkitFullscreenElement && 
+                            !document.msFullscreenElement;
 
-        const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
 
-        // Penambahan syarat: statusProteksiFullscreen === "YA"
-        if (isNotFullscreen && sedangUjian && statusProteksiFullscreen === "YA") {
+    if (isNotFullscreen && sedangUjian && statusProteksiFullscreen === "YA") {
+        
+        // 1. Sembunyikan lembar soal sementara demi keamanan
+        document.getElementById('formFrame').style.visibility = "hidden";
+        
+        // 2. Munculkan Notifikasi Konfirmasi Pilihan
+        tampilkanNotifikasi(
+            "Anda menekan ESC atau keluar dari mode Layar Penuh. Apakah Anda benar-benar ingin menghentikan dan keluar dari sesi ujian ini?", 
+            "warning", 
+            "Konfirmasi Keluar Ujian", 
+            false // Matikan tombol close bawaan agar tidak bentrok
+        );
+
+        // 3. Buat dua tombol pilihan (Keluar / Lanjutkan) secara dinamis di dalam kotak notifikasi
+        const modalBox = document.querySelector('.custom-modal-box');
+        
+        // Hapus penampung tombol pilihan lama jika sebelumnya sudah ada (mencegah duplikat)
+        const opsiLama = document.getElementById('boxOpsiKeluar');
+        if(opsiLama) opsiLama.remove();
+
+        const boxOpsi = document.createElement('div');
+        boxOpsi.id = "boxOpsiKeluar";
+        boxOpsi.style.display = "flex";
+        boxOpsi.style.gap = "12px";
+        boxOpsi.style.marginTop = "20px";
+
+        boxOpsi.innerHTML = `
+            <button class="btn btn-danger" id="btnKonfirmasiKeluar" style="flex:1;">Ya, Keluar Ujian</button>
+            <button class="btn btn-success" id="btnKonfirmasiLanjut" style="flex:1;">Tidak, Lanjut Ujian</button>
+        `;
+        modalBox.appendChild(boxOpsi);
+
+        // PILIHAN A: Jika siswa memilih benar-benar ingin KELUAR (Hukuman/Selesai)
+        document.getElementById('btnKonfirmasiKeluar').onclick = function() {
+            boxOpsi.remove();
+            clearInterval(siswaExamInterval);
             document.getElementById('formFrame').src = "";
             document.getElementById('examArea').style.display = 'none';
             document.getElementById('mainContainer').classList.remove('fullscreen');
             
-            tampilkanNotifikasi(
-                "🚨 Sesi ujian Anda dibatalkan otomatis karena terdeteksi keluar dari mode layar penuh atau membuka aplikasi lain!", 
-                "danger", 
-                "Pelanggaran Terdeteksi", 
-                true
-            );
+            tampilkanNotifikasi("Sesi ujian Anda telah dihentikan.", "danger", "Ujian Selesai", true);
+            document.getElementById('btnModalClose').onclick = function() { window.location.reload(); };
+        };
 
-            document.getElementById('btnModalClose').onclick = function() {
-                window.location.reload();
-            };
-        }
+        // PILIHAN B: Jika siswa TIDAK sengaja dan ingin KEMBALI ujian dengan layar penuh
+        document.getElementById('btnKonfirmasiLanjut').onclick = function() {
+            boxOpsi.remove();
+            tutupNotifikasi();
+            
+            // Tampilkan kembali lembar soal
+            document.getElementById('formFrame').style.visibility = "visible";
+            
+            // Paksa browser mengunci layar penuh kembali
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+        };
     }
+}
 
     // Pasang event listener browser
     document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
