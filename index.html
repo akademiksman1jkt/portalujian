@@ -379,16 +379,47 @@
         <button class="btn btn-secondary" onclick="window.location.reload();" style="width:100%">Log Out Administrator</button>
     </div>
 
-    <!-- 5. AREA EMBED GOOGLE FORM -->
+   <!-- 5. AREA EMBED GOOGLE FORM -->
     <div id="examArea">
         <div class="exam-header">
-            <span id="judulUjianAktif" style="font-weight:700;">Ujian Sedang Berjalan</span>
-            <button onclick="window.location.reload();" class="btn btn-danger btn-sm">Keluar Ujian</button>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <span id="judulUjianAktif" style="font-weight:700;">Ujian Sedang Berjalan</span>
+                
+                <!-- ELEMEN TIMER DENGAN ANIMASI KUCING GEMOY -->
+                <div id="boxTimerSiswa" style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); padding:6px 14px; border-radius:20px; width:fit-content; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s;">
+                    <!-- Ikon Kucing Berjalan Lucu -->
+                    <span id="ikonTimerAnimasi" style="display:inline-block; font-size:20px; animation: kucingJalan 0.8s infinite ease-in-out;">🐈</span>
+                    <span id="timerUjianSiswa" style="color:#f59e0b; font-weight:700; font-family:monospace; font-size:15px; letter-spacing:0.5px;">Sisa Waktu: --:--:--</span>
+                </div>
+            </div>
+            <button onclick="konfirmasiKeluarUjian()" class="btn btn-danger btn-sm">Keluar Ujian</button>
         </div>
         <iframe id="formFrame" src="">Memuat Jalur Lembar Soal...</iframe>
     </div>
-</div>
 
+    <!-- STYLE CSS ANIMASI BARU -->
+    <style>
+        /* Animasi kucing berjalan bergoyang ke kiri dan kanan */
+        @keyframes kucingJalan {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-4px) rotate(5deg); }
+        }
+        /* Animasi bergetar panik saat waktu mau habis */
+        @keyframes kucingPanik {
+            0%, 100% { transform: translate(0, 0) scale(1.2); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        @keyframes bgDarurat {
+            0%, 100% { background: rgba(239, 68, 68, 0.25); border-color: #ef4444; box-shadow: 0 0 10px rgba(239,68,68,0.5); }
+            50% { background: rgba(239, 68, 68, 0.05); }
+        }
+        .timer-kritis-lucu {
+            animation: bgDarurat 1s infinite ease-in-out !important;
+        }
+    </style>
 <script>
     // URL WEB APP APPS SCRIPT DARI AKUN WORKSPACE BELAJAR.ID
     const _0x5b3e = [
@@ -633,6 +664,10 @@
         document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujian.nama;
         document.getElementById('examArea').style.display = 'flex';
         document.getElementById('formFrame').src = customFormUrl;
+
+        // PICU START TIMER: Ambil angka durasi menit dari database mata ujian tersebut
+        const durasiUjianSiswa = parseInt(ujian.durasi) || 60; // default 60 menit jika kosong
+        jalankanTimerUjianSiswa(durasiUjianSiswa);
     }
 
     document.getElementById('btnLihatNilai').addEventListener('click', function() {
@@ -1166,6 +1201,79 @@ function handleSearchSiswa() {
     document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
     document.addEventListener('webkitfullscreenchange', deteksiPerubahanLayar);
     document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
+
+    let siswaExamInterval = null; 
+
+    function jalankanTimerUjianSiswa(durasiMenit) {
+        if (siswaExamInterval) clearInterval(siswaExamInterval);
+        
+        let totalDetikSiswa = durasiMenit * 60; 
+        const displayTimer = document.getElementById('timerUjianSiswa');
+        const ikonAnimasi = document.getElementById('ikonTimerAnimasi');
+        const boxTimer = document.getElementById('boxTimerSiswa');
+
+        // Reset tampilan awal ke mode normal
+        boxTimer.classList.remove('timer-kritis-lucu');
+        ikonAnimasi.style.animation = "kucingJalan 0.8s infinite ease-in-out";
+        ikonAnimasi.innerText = "🐈";
+
+        siswaExamInterval = setInterval(function() {
+            totalDetikSiswa--;
+
+            let jam = Math.floor(totalDetikSiswa / 3600);
+            let sisaDetik = totalDetikSiswa % 3600;
+            let menit = Math.floor(sisaDetik / 60);
+            let detik = sisaDetik % 60;
+
+            let teksJam = jam < 10 ? "0" + jam : jam;
+            let teksMenit = menit < 10 ? "0" + menit : menit;
+            let teksDetik = detik < 10 ? "0" + detik : detik;
+
+            displayTimer.innerHTML = `Sisa Waktu: <strong style="color:#ffffff; font-size:16px;">${teksJam}:${teksMenit}:${teksDetik}</strong>`;
+
+            // FASE 1: Jika waktu di bawah 5 menit (Mode Kucing Panik)
+            if (totalDetikSiswa <= 300 && totalDetikSiswa > 0) {
+                boxTimer.classList.add('timer-kritis-lucu');
+                displayTimer.style.color = "#ff6b6b";
+                
+                // Ubah animasi ke mode getar panik
+                ikonAnimasi.style.animation = "kucingPanik 0.15s infinite linear";
+                // Emoji kucing kaget bergantian
+                ikonAnimasi.innerText = (detik % 2 === 0) ? "🙀" : "😿";
+            } 
+            // FASE 2: Waktu Normal (Kucing santai mengejar ikan)
+            else {
+                // Selang-seling emoji kucing dan ikan setiap detik biar terkesan mengejar makanan
+                ikonAnimasi.innerText = (detik % 2 === 0) ? "🐈" : "🐟";
+            }
+
+            // FASE 3: Waktu Habis
+            if (totalDetikSiswa <= 0) {
+                clearInterval(siswaExamInterval);
+                document.getElementById('formFrame').src = "";
+                document.getElementById('examArea').style.display = 'none';
+                document.getElementById('mainContainer').classList.remove('fullscreen');
+                
+                tampilkanNotifikasi(
+                    "😿 Meoww! Waktu pengerjaan sudah habis total. Lembar ujian otomatis dikunci sistem!", 
+                    "danger", 
+                    "Waktu Habis", 
+                    true
+                );
+
+                document.getElementById('btnModalClose').onclick = function() {
+                    window.location.reload();
+                };
+            }
+        }, 1000);
+    }
+    // Fungsi konfirmasi pengaman agar siswa tidak tidak sengaja menekan tombol keluar
+    function konfirmasiKeluarUjian() {
+        if(confirm("Apakah Anda yakin ingin keluar dari lembar ujian ini? Pastikan Anda sudah menekan tombol SUBMIT di dalam lembar soal terlebih dahulu.")) {
+            if (siswaExamInterval) clearInterval(siswaExamInterval);
+            window.location.reload();
+        }
+    }
 </script>
 </body>
 </html>
