@@ -666,27 +666,30 @@
 
     // FUNGSI PEMBANTU UNTUK MEMBUKA IFRAME GOOGLE FORM
     function prosesMasukLembarSoal(ujian) {
-        if (statusProteksiFullscreen === "YA") {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-        }
-
-        var idEntryNama = ujian.entryNama || "entry.123456789";  
-        var idEntryKelas = ujian.entryKelas || "entry.987654321"; 
-        var customFormUrl = ujian.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
-
-        document.getElementById('menuArea').style.display = 'none';
-        document.getElementById('mainContainer').classList.add('fullscreen');
-        document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujian.nama;
-        document.getElementById('examArea').style.display = 'flex';
-        document.getElementById('formFrame').src = customFormUrl;
-
-        // PICU START TIMER: Ambil angka durasi menit dari database mata ujian tersebut
-        const durasiUjianSiswa = parseInt(ujian.durasi) || 60; // default 60 menit jika kosong
-        jalankanTimerUjianSiswa(durasiUjianSiswa);
+    if (statusProteksiFullscreen === "YA") {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
     }
+
+    var idEntryNama = ujian.entryNama || "entry.123456789";  
+    var idEntryKelas = ujian.entryKelas || "entry.987654321"; 
+    var customFormUrl = ujian.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
+
+    document.getElementById('menuArea').style.display = 'none';
+    document.getElementById('mainContainer').classList.add('fullscreen');
+    document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujian.nama;
+    document.getElementById('examArea').style.display = 'flex';
+    document.getElementById('formFrame').src = customFormUrl;
+
+    // KUNCI UTAMA PERBAIKAN:
+    // Ubah parseInt(ujian.durasi) menjadi parseInt(ujian.durasiUjian)
+    const durasiPengerjaanAsli = parseInt(ujian.durasiUjian) || 60; 
+    
+    // Panggil fungsi timer dengan durasi pengerjaan soal asli
+    jalankanTimerUjianSiswa(durasiPengerjaanAsli);
+}
 
     document.getElementById('btnLihatNilai').addEventListener('click', function() {
         document.getElementById('menuArea').style.display = 'none';
