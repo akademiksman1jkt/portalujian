@@ -628,32 +628,33 @@
             dataForm.append("username", document.getElementById('username').value.trim());
             dataForm.append("password", document.getElementById('password').value.trim());
 
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: dataForm
-            })
-            .then(res => res.json())
-            .then(res => {
-                tutupNotifikasi();
-                if(!res.success) {
-                    tampilkanNotifikasi("Sesi masuk Anda telah kedaluwarsa. Silakan muat ulang halaman.", "danger", "Sesi Habis");
-                    return;
-                }
+            // CARI KODE LAMA INI DI CODESCRIPT ANDA:
+fetch(WEB_APP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: dataForm
+})
+.then(res => res.json())
+.then(res => {
+    tutupNotifikasi();
+    if(!res.success) {
+        tampilkanNotifikasi("Sesi masuk Anda telah kedaluwarsa. Silakan muat ulang halaman.", "danger", "Sesi Habis");
+        return;
+    }
 
-                // Perbarui daftar ujian lokal siswa dengan data teranyar dari server Google Sheets
-                sessionData.daftarUjian = res.daftarUjian;
-                const ujianTerbaruServer = res.daftarUjian.find(u => u.nama === ujianTerpilih.nama);
+    // Perbarui daftar ujian lokal siswa dengan data teranyar dari server Google Sheets
+    sessionData.daftarUjian = res.daftarUjian;
+    const ujianTerbaruServer = res.daftarUjian.find(u => u.nama === ujianTerpilih.nama);
 
-                // Validasi token masukan siswa dengan token yang sedang aktif di spreadsheet saat ini
-                if (ujianTerbaruServer && tokenInput !== ujianTerbaruServer.tokenSoal) {
-                    tampilkanNotifikasi("⚠️ Token kedaluwarsa atau salah! Periksa kembali atau hubungi pengawas ruangan Anda.", "danger", "Token Salah");
-                    return;
-                }
+    // Validasi token masukan siswa dengan token yang sedang aktif di spreadsheet saat ini
+    if (ujianTerbaruServer && tokenInput !== ujianTerbaruServer.tokenSoal) {
+        tampilkanNotifikasi("⚠️ Token kedaluwarsa atau salah! Periksa kembali atau hubungi pengawas ruangan Anda.", "danger", "Token Salah");
+        return;
+    }
 
-                // Jika token lolos verifikasi server, lanjutkan masuk ke lembar soal
-                prosesMasukLembarSoal(ujianTerbaruServer);
-            })
+    // Jika token lolos verifikasi server, lanjutkan masuk ke lembar soal
+    prosesMasukLembarSoal(ujianTerbaruServer);
+})
             .catch(err => {
                 tutupNotifikasi();
                 tampilkanNotifikasi("Gagal memverifikasi token akibat gangguan jaringan: " + err.message, "danger", "Koneksi Gagal");
@@ -685,7 +686,9 @@
 
     // KUNCI UTAMA PERBAIKAN:
     // Ubah parseInt(ujian.durasi) menjadi parseInt(ujian.durasiUjian)
-    const durasiPengerjaanAsli = parseInt(ujian.durasiUjian) || 60; 
+    const durasiPengerjaanAsli = (ujian.durasiUjian && parseInt(ujian.durasiUjian) !== parseInt(ujian.durasi)) 
+    ? parseInt(ujian.durasiUjian) 
+    : 120; 
     
     // Panggil fungsi timer dengan durasi pengerjaan soal asli
     jalankanTimerUjianSiswa(durasiPengerjaanAsli);
