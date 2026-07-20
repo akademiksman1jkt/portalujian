@@ -269,20 +269,25 @@
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
-                    <div>
-                        <label>Target Kelas / Angkatan:</label>
-                        <input type="text" id="addTargetTingkat" placeholder="Contoh: XI - 1, XI - 3" style="background:white;">
-                    </div>
-                    <div>
-                        <label>Teks Kuis Kunci (Secret Key):</label>
-                        <input type="text" id="addSecretKey" placeholder="Contoh: KUNCIUTS" style="background:white;">
-                    </div>
-                    <div>
-                        <label>Durasi Token (Menit):</label>
-                        <input type="number" id="addDurasi" value="5" min="1" style="background:white;">
-                    </div>
-                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+    <div>
+        <label>Target Kelas / Angkatan:</label>
+        <input type="text" id="addTargetTingkat" placeholder="Contoh: XI - 1, XI - 3" style="background:white;">
+    </div>
+    <div>
+        <label>Teks Kuis Kunci (Secret Key):</label>
+        <input type="text" id="addSecretKey" placeholder="Contoh: KUNCIUTS" style="background:white;">
+    </div>
+    <div>
+        <label>Durasi Token (Menit):</label>
+        <input type="number" id="addDurasi" value="5" min="1" style="background:white;">
+    </div>
+    <!-- INPUT BARU KHUSUS UNTUK DURASI UJIAN SISWA -->
+    <div>
+        <label>Durasi Ujian Siswa (Menit):</label>
+        <input type="number" id="addDurasiUjian" value="60" min="1" style="background:white;">
+    </div>
+</div>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;">
                     <div>
@@ -893,6 +898,7 @@
         document.getElementById('btnBatalEdit').style.display = "inline-flex";
 
         switchAdminTab('sectionInputSoal', document.getElementById('tabInput'));
+        document.getElementById('addDurasiUjian').value = ujian.durasiUjian || 60;
     }
 
     function resetFormUjian() {
@@ -913,6 +919,7 @@
         document.getElementById('btnTambahUjian').innerText = "Simpan Mata Ujian";
         document.getElementById('btnTambahUjian').className = "btn btn-success";
         document.getElementById('btnBatalEdit').style.display = "none";
+        document.getElementById('addDurasiUjian').value = "60";
     }
 
     document.getElementById('btnTambahUjian').addEventListener('click', function() {
@@ -926,6 +933,7 @@
         const targetTingkat = document.getElementById('addTargetTingkat').value.trim();
         const statusToken = document.getElementById('addStatusToken').value;
         const durasi = document.getElementById('addDurasi').value || 5;
+        const durasiUjian = document.getElementById('addDurasiUjian').value || 60;
         
         let secretKey = document.getElementById('addSecretKey').value.trim();
 
@@ -946,29 +954,31 @@
             .then(() => {
                 const ujianLama = sessionData.daftarUjian.find(u => u.idBaris == editId);
                 secretKey = ujianLama ? ujianLama.tokenSoal : "SECRET99"; 
-                kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi);
+                kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi, durasiUjian);
             });
         } else {
-            kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi);
+            kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi, durasiUjian);
         }
     });
 
-    function kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi) {
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ 
-                action: "addUjian", namaUjian: nama, urlUjian: url, statusSoal: status, jadwalTampil: jadwal,
-                entryNama: entryNama, entryKelas: entryKelas, targetTingkat: targetTingkat, secretKey: secretKey, statusToken: statusToken, durasi: durasi
-            })
+    function kirimSimpanData(nama, url, status, jadwal, entryNama, entryKelas, targetTingkat, secretKey, statusToken, durasi, durasiUjian) {
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ 
+            action: "addUjian", namaUjian: nama, urlUjian: url, statusSoal: status, jadwalTampil: jadwal,
+            entryNama: entryNama, entryKelas: entryKelas, targetTingkat: targetTingkat, secretKey: secretKey, 
+            statusToken: statusToken, durasi: durasi, 
+            durasiUjian: durasiUjian // DIKIRIM KE BACKEND SPREADSHEET
         })
-        .then(res => res.json())
-        .then(res => {
-            tampilkanNotifikasi("Data ujian berhasil diperbarui!", "success", "Simpan Sukses");
-            resetFormUjian();
-            renderDaftarUjianAdmin(res.daftarUjian);
-            switchAdminTab('sectionDaftarSoal', document.getElementById('tabDaftar'));
-        });
-    }
+    })
+    .then(res => res.json())
+    .then(res => {
+        tampilkanNotifikasi("Data ujian berhasil diperbarui!", "success", "Simpan Sukses");
+        resetFormUjian();
+        renderDaftarUjianAdmin(res.daftarUjian);
+        switchAdminTab('sectionDaftarSoal', document.getElementById('tabDaftar'));
+    });
+}
 
     // MODIFIKASI TERANYAR PENGIRIMAN ANTI-CORS PADA TOMBOL FORCE REFRESH TOKEN
     function refreshTokensAdmin() {
