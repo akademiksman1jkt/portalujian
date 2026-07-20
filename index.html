@@ -385,11 +385,21 @@
             <div style="display:flex; flex-direction:column; gap:4px;">
                 <span id="judulUjianAktif" style="font-weight:700;">Ujian Sedang Berjalan</span>
                 
-                <!-- ELEMEN TIMER DENGAN ANIMASI KUCING GEMOY -->
-                <div id="boxTimerSiswa" style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); padding:6px 14px; border-radius:20px; width:fit-content; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s;">
-                    <!-- Ikon Kucing Berjalan Lucu -->
-                    <span id="ikonTimerAnimasi" style="display:inline-block; font-size:20px; animation: kucingJalan 0.8s infinite ease-in-out;">🐈</span>
-                    <span id="timerUjianSiswa" style="color:#f59e0b; font-weight:700; font-family:monospace; font-size:15px; letter-spacing:0.5px;">Sisa Waktu: --:--:--</span>
+                <!-- TIMER ARKADE INTERAKTIF: TAMAGOTCHI MONSTER -->
+                <div id="boxTimerSiswa" onclick="interaksiMonster()" title="Ketuk terus untuk menaikkan level & merubah wujudnya!" style="display:inline-flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(79, 70, 229, 0.3) 0%, rgba(16, 185, 129, 0.3) 100%); padding:8px 20px; border-radius:30px; width:fit-content; border: 2px solid rgba(255,255,255,0.4); cursor:pointer; user-select:none; position:relative; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                    
+                    <!-- Wadah Karakter Tamagotchi -->
+                    <div style="position:relative; display:inline-block; font-size:24px; width:30px; height:30px; line-height:30px; text-align:center;">
+                        <span id="ikonMonster" style="display:inline-block; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);">👾</span>
+                        <!-- Efek Teks Pop-Up Naik Level / Girang -->
+                        <span id="efekMonsterMelayang" style="position:absolute; top:-22px; left:-5px; font-size:10px; font-weight:900; color:#10b981; opacity:0; transition:all 0.3s ease; pointer-events:none; white-space:nowrap; background:#ffffff; padding:2px 6px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">Happy! 🥰</span>
+                    </div>
+                    
+                    <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                        <span id="timerUjianSiswa" style="color:#ffffff; font-weight:700; font-family:monospace; font-size:15px; letter-spacing:0.5px; line-height:1.2;">Sisa Waktu: --:--:--</span>
+                        <!-- Indikator Level Evolusi Kecil -->
+                        <span id="levelMonster" style="font-size:9px; color:rgba(255,255,255,0.8); font-weight:800; text-transform:uppercase; margin-top:1px;">Lv.1 Slime Egg</span>
+                    </div>
                 </div>
             </div>
             <button onclick="konfirmasiKeluarUjian()" class="btn btn-danger btn-sm">Keluar Ujian</button>
@@ -397,27 +407,30 @@
         <iframe id="formFrame" src="">Memuat Jalur Lembar Soal...</iframe>
     </div>
 
-    <!-- STYLE CSS ANIMASI BARU -->
+    <!-- STYLE CSS ANIMASI TAMAGOTCHI -->
     <style>
-        /* Animasi kucing berjalan bergoyang ke kiri dan kanan */
-        @keyframes kucingJalan {
-            0%, 100% { transform: translateY(0) rotate(-5deg); }
-            50% { transform: translateY(-4px) rotate(5deg); }
+        #boxTimerSiswa:active {
+            transform: scale(0.92) rotate(1deg);
         }
-        /* Animasi bergetar panik saat waktu mau habis */
-        @keyframes kucingPanik {
+        /* Efek Berdenyut Waktu Normal */
+        @keyframes monsterSantai {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1) translateY(-2px); }
+        }
+        /* Efek Getar Mode Panik/Darurat */
+        @keyframes monsterPanik {
             0%, 100% { transform: translate(0, 0) scale(1.2); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
+            20% { transform: translate(-2px, 2px) rotate(-3deg); }
+            40% { transform: translate(-2px, -2px) rotate(3deg); }
+            60% { transform: translate(2px, 2px) rotate(-1deg); }
+            80% { transform: translate(2px, -2px) rotate(2deg); }
         }
-        @keyframes bgDarurat {
-            0%, 100% { background: rgba(239, 68, 68, 0.25); border-color: #ef4444; box-shadow: 0 0 10px rgba(239,68,68,0.5); }
-            50% { background: rgba(239, 68, 68, 0.05); }
+        @keyframes ledakanGlow {
+            0%, 100% { background: rgba(239, 68, 68, 0.5); border-color: #ef4444; box-shadow: 0 0 15px #ef4444; }
+            50% { background: rgba(31, 41, 55, 0.9); border-color: rgba(255,255,255,0.2); box-shadow: 0 0 0px transparent; }
         }
-        .timer-kritis-lucu {
-            animation: bgDarurat 1s infinite ease-in-out !important;
+        .kritis-tamagotchi {
+            animation: ledakanGlow 1s infinite ease-in-out !important;
         }
     </style>
 <script>
@@ -1203,19 +1216,32 @@ function handleSearchSiswa() {
     document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
 
     let siswaExamInterval = null; 
+    let statusKritisSiswa = false;
+    let hitungKlikMonster = 0; // Menyimpan status jumlah klik siswa
+    let statusSedangAnimasi = false;
+
+    // Kumpulan Wujud Berdasarkan Tingkatan Level Evolusi
+    const listEvolusiNormal = ["🥚", "👾", "🦊", "🤖", "🐉"];
+    const namaLevelNormal = ["Lv.1 Slime Egg", "Lv.2 Baby Alien", "Lv.3 Cyber Fox", "Lv.4 Mecha Golem", "Lv.5 Omega Dragon! 🔥"];
 
     function jalankanTimerUjianSiswa(durasiMenit) {
         if (siswaExamInterval) clearInterval(siswaExamInterval);
         
         let totalDetikSiswa = durasiMenit * 60; 
         const displayTimer = document.getElementById('timerUjianSiswa');
-        const ikonAnimasi = document.getElementById('ikonTimerAnimasi');
         const boxTimer = document.getElementById('boxTimerSiswa');
+        const ikon = document.getElementById('ikonMonster');
+        const teksLevel = document.getElementById('levelMonster');
 
-        // Reset tampilan awal ke mode normal
-        boxTimer.classList.remove('timer-kritis-lucu');
-        ikonAnimasi.style.animation = "kucingJalan 0.8s infinite ease-in-out";
-        ikonAnimasi.innerText = "🐈";
+        // Reset game state awal
+        boxTimer.classList.remove('kritis-tamagotchi');
+        hitungKlikMonster = 0;
+        statusSedangAnimasi = false;
+        statusKritisSiswa = false;
+        
+        ikon.innerText = listEvolusiNormal[0];
+        teksLevel.innerText = namaLevelNormal[0];
+        ikon.style.animation = "monsterSantai 0.6s infinite alternate ease-in-out";
 
         siswaExamInterval = setInterval(function() {
             totalDetikSiswa--;
@@ -1231,20 +1257,27 @@ function handleSearchSiswa() {
 
             displayTimer.innerHTML = `Sisa Waktu: <strong style="color:#ffffff; font-size:16px;">${teksJam}:${teksMenit}:${teksDetik}</strong>`;
 
-            // FASE 1: Jika waktu di bawah 5 menit (Mode Kucing Panik)
+            // FASE 1: Jika waktu di bawah 5 menit (Monster berubah wujud jadi Kiamat/Setan Api)
             if (totalDetikSiswa <= 300 && totalDetikSiswa > 0) {
-                boxTimer.classList.add('timer-kritis-lucu');
+                statusKritisSiswa = true;
+                boxTimer.classList.add('kritis-tamagotchi');
                 displayTimer.style.color = "#ff6b6b";
+                teksLevel.innerText = "🚨 DANGER: T-REX CRITICAL!!";
+                teksLevel.style.color = "#ff6b6b";
                 
-                // Ubah animasi ke mode getar panik
-                ikonAnimasi.style.animation = "kucingPanik 0.15s infinite linear";
-                // Emoji kucing kaget bergantian
-                ikonAnimasi.innerText = (detik % 2 === 0) ? "🙀" : "😿";
+                if (!statusSedangAnimasi) {
+                    ikon.innerText = (detik % 2 === 0) ? "👹" : "🔥";
+                    ikon.style.animation = "monsterPanik 0.1s infinite linear";
+                }
             } 
-            // FASE 2: Waktu Normal (Kucing santai mengejar ikan)
+            // FASE 2: Waktu normal (Kembali ke wujud evolusi klik siswa jika tidak sedang di-klik)
             else {
-                // Selang-seling emoji kucing dan ikan setiap detik biar terkesan mengejar makanan
-                ikonAnimasi.innerText = (detik % 2 === 0) ? "🐈" : "🐟";
+                if (!statusSedangAnimasi) {
+                    let indexWujud = Math.min(Math.floor(hitungKlikMonster / 5), listEvolusiNormal.length - 1);
+                    ikon.innerText = listEvolusiNormal[indexWujud];
+                    teksLevel.innerText = namaLevelNormal[indexWujud];
+                    teksLevel.style.color = "rgba(255,255,255,0.8)";
+                }
             }
 
             // FASE 3: Waktu Habis
@@ -1255,7 +1288,7 @@ function handleSearchSiswa() {
                 document.getElementById('mainContainer').classList.remove('fullscreen');
                 
                 tampilkanNotifikasi(
-                    "😿 Meoww! Waktu pengerjaan sudah habis total. Lembar ujian otomatis dikunci sistem!", 
+                    "💥 GAME OVER! Batas waktu pengerjaan telah habis dan lembar jawaban Anda dikunci.", 
                     "danger", 
                     "Waktu Habis", 
                     true
@@ -1266,6 +1299,60 @@ function handleSearchSiswa() {
                 };
             }
         }, 1000);
+    }
+
+    // FUNGSI UTAMA GAMEPLAY: MERESPONS KETUKAN SISWA
+    function interaksiMonster() {
+        if (statusSedangAnimasi) return;
+        statusSedangAnimasi = true;
+
+        const ikon = document.getElementById('ikonMonster');
+        const efekTeks = document.getElementById('efekMonsterMelayang');
+        const teksLevel = document.getElementById('levelMonster');
+
+        // Tambah poin evolusi
+        hitungKlikMonster++;
+
+        // Hitung wujud saat ini berdasarkan kelipatan 5 klik
+        let indexWujud = Math.min(Math.floor(hitungKlikMonster / 5), listEvolusiNormal.length - 1);
+        let cekApakahEvolusi = (hitungKlikMonster % 5 === 0 && indexWujud < listEvolusiNormal.length);
+
+        // Berikan lompatan fisika kenyal
+        ikon.style.transform = "translateY(-15px) scale(1.4) rotate(15deg)";
+        
+        if (statusKritisSiswa) {
+            efekTeks.innerText = "PANIC! 😱";
+            efekTeks.style.color = "#ef4444";
+        } else if (cekApakahEvolusi) {
+            efekTeks.innerText = "✨ EVOLUTION! ✨";
+            efekTeks.style.color = "#3b82f6";
+            ikon.style.transform = "translateY(-20px) scale(1.7) rotate(-20deg)";
+        } else {
+            const pesanAcak = ["Ouch! ⚡", "Yeay! 🥰", "Geli! 🤣", "Boom! ✨", "Cute 💖"];
+            efekTeks.innerText = pesanAcak[Math.floor(Math.random() * pesanAcak.length)];
+            efekTeks.style.color = "#10b981";
+        }
+
+        efekTeks.style.opacity = "1";
+        efekTeks.style.transform = "translateY(-25px) scale(1.1)";
+
+        // Ganti visual wujud instan saat ditekan
+        if(!statusKritisSiswa) {
+            ikon.innerText = "💥"; // Efek ledakan evolusi/sentuhan sekejap
+        }
+
+        setTimeout(() => {
+            ikon.style.transform = "translateY(0) scale(1) rotate(0deg)";
+            efekTeks.style.opacity = "0";
+            efekTeks.style.transform = "translateY(0px) scale(1)";
+            
+            // Kembalikan ke wujud aslinya setelah efek sentuh selesai
+            if (!statusKritisSiswa) {
+                ikon.innerText = listEvolusiNormal[indexWujud];
+                teksLevel.innerText = namaLevelNormal[indexWujud];
+            }
+            statusSedangAnimasi = false;
+        }, 400);
     }
     // Fungsi konfirmasi pengaman agar siswa tidak tidak sengaja menekan tombol keluar
     function konfirmasiKeluarUjian() {
