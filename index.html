@@ -1462,75 +1462,61 @@ function handleSearchSiswa() {
 }
 
 // =========================================================================
-// ANTI CHEAT: DETEKSI ALT+TAB / PINDAH APLIKASI / PINDAH TAB BROWSER
+// 1. FUNGSI UNTUK MENGUNCI TOMBOL KEYBOARD SISTEM (ALT+TAB, ESC, WIN)
 // =========================================================================
-function tanganiSiswaPindahAplikasi() {
-    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+async function kunciLayarDanKeyboard() {
+    const elem = document.documentElement;
+    try {
+        // Minta layar penuh
+        if (elem.requestFullscreen) { await elem.requestFullscreen(); } 
+        else if (elem.webkitRequestFullscreen) { await elem.webkitRequestFullscreen(); } 
+        else if (elem.msRequestFullscreen) { await elem.msRequestFullscreen(); }
 
-    if (sedangUjian && statusProteksiFullscreen === "YA") {
-        
-        // 1. Sembunyikan lembar soal secara instan
-        document.getElementById('formFrame').style.visibility = "hidden";
-
-        // 2. Tampilkan Notifikasi Peringatan Pindah Aplikasi
-        tampilkanNotifikasi(
-            "🚨 Terdeteksi aktivitas berpindah tab/aplikasi (Alt+Tab)! Klik tombol di bawah untuk kembali mengunci layar ujian.", 
-            "danger", 
-            "Pelanggaran Terdeteksi", 
-            false
-        );
-
-        const modalBox = document.querySelector('.custom-modal-box');
-        const opsiLama = document.getElementById('boxOpsiKeluar');
-        if(opsiLama) opsiLama.remove();
-
-        const boxOpsi = document.createElement('div');
-        boxOpsi.id = "boxOpsiKeluar";
-        boxOpsi.style.display = "flex";
-        boxOpsi.style.gap = "12px";
-        boxOpsi.style.marginTop = "20px";
-
-        boxOpsi.innerHTML = `
-            <button class="btn btn-danger" id="btnKonfirmasiKeluar" style="flex:1;">Ya, Keluar Ujian</button>
-            <button class="btn btn-success" id="btnKonfirmasiLanjut" style="flex:1;">Kembali ke Ujian</button>
-        `;
-        modalBox.appendChild(boxOpsi);
-
-        // OPSI A: Jika pilih keluar
-        document.getElementById('btnKonfirmasiKeluar').onclick = function() {
-            boxOpsi.remove();
-            if (siswaExamInterval) clearInterval(siswaExamInterval);
-            window.location.reload();
-        };
-
-        // OPSI B: Jika pilih kembali ke ujian
-        document.getElementById('btnKonfirmasiLanjut').onclick = function() {
-            boxOpsi.remove();
-            tutupNotifikasi();
-            
-            // Tampilkan soal kembali
-            document.getElementById('formFrame').style.visibility = "visible";
-            
-            // Kunci layar penuh lagi
-            kunciLayarPenuhInstan();
-        };
+        // KUNCI TOMBOL ALT, TAB, ESCAPE, DAN WINDOWS (Keyboard Lock API)
+        if ('keyboard' in navigator && 'lock' in navigator.keyboard) {
+            await navigator.keyboard.lock(["AltLeft", "AltRight", "Tab", "Escape", "MetaLeft", "MetaRight"]);
+        }
+    } catch (err) {
+        console.warn("Keyboard lock tidak didukung atau ditolak:", err);
     }
 }
 
 // =========================================================================
-// ANTI CHEAT PINTAR: DETEKSI ALT+TAB TANPA TERPENGARUH KLIK IFRAME GFORM
+// 2. SINKRONKAN DENGAN MASUK SOAL
 // =========================================================================
-function tanganiSiswaPindahAplikasi() {
+function prosesMasukLembarSoal(ujian) {
+    if (statusProteksiFullscreen === "YA") {
+        kunciLayarDanKeyboard();
+    }
+
+    var idEntryNama = ujian.entryNama || "entry.123456789";  
+    var idEntryKelas = ujian.entryKelas || "entry.987654321"; 
+    var customFormUrl = ujian.url + "?embedded=true&" + idEntryNama + "=" + encodeURIComponent(sessionData.nama) + "&" + idEntryKelas + "=" + encodeURIComponent(sessionData.kelas);
+
+    document.getElementById('menuArea').style.display = 'none';
+    document.getElementById('mainContainer').classList.add('fullscreen');
+    document.getElementById('judulUjianAktif').innerText = "Mengerjakan: " + ujian.nama;
+    document.getElementById('examArea').style.display = 'flex';
+    document.getElementById('formFrame').src = customFormUrl;
+
+    const durasiPengerjaanAsli = parseInt(ujian.durasiUjian) || 60; 
+    jalankanTimerUjianSiswa(durasiPengerjaanAsli);
+}
+
+// =========================================================================
+// 3. ANTI CHEAT: DETEKSI KELUAR FULLSCREEN / KELUAR FOKUS BROWSER
+// =========================================================================
+function tanganiPelanggaranSiswa() {
     const sedangUjian = document.getElementById('examArea').style.display === 'flex';
 
     if (sedangUjian && statusProteksiFullscreen === "YA") {
         
-        // 1. Sembunyikan lembar soal secara instan
+        // Sembunyikan lembar soal secara instan
         document.getElementById('formFrame').style.visibility = "hidden";
 
-        // 2. Tampilkan Notifikasi Peringatan
+        // Tampilkan Notifikasi Peringatan
         tampilkanNotifikasi(
-            "🚨 Terdeteksi aktivitas berpindah aplikasi/tab! Klik tombol di bawah untuk melanjutkan ujian.", 
+            "🚨 Terdeteksi upaya keluar dari layar penuh / berpindah aplikasi! Klik 'Kembali ke Ujian' untuk mengunci layar kembali.", 
             "danger", 
             "Pelanggaran Terdeteksi", 
             false
@@ -1559,48 +1545,28 @@ function tanganiSiswaPindahAplikasi() {
             window.location.reload();
         };
 
-        // OPSI B: Kembali & Kunci Layar Penuh Lagi
+        // OPSI B: Kembali ke Ujian (Kunci Ulang Layar & Keyboard)
         document.getElementById('btnKonfirmasiLanjut').onclick = function() {
             boxOpsi.remove();
             tutupNotifikasi();
             document.getElementById('formFrame').style.visibility = "visible";
-            kunciLayarPenuhInstan();
+            kunciLayarDanKeyboard();
         };
     }
 }
 
-function kunciLayarPenuhInstan() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-    else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-    else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-}
-
-// 1. Deteksi saat pindah TAB browser
-document.addEventListener("visibilitychange", function() {
-    if (document.hidden) {
-        tanganiSiswaPindahAplikasi();
+// DETEKTOR 1: Jika siswa terlepas dari Fullscreen (misal paksa pencet ESC/Windows)
+document.addEventListener('fullscreenchange', function() {
+    const isNotFullscreen = !document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement;
+    if (isNotFullscreen) {
+        tanganiPelanggaranSiswa();
     }
 });
 
-// 2. Deteksi saat ALT+TAB / Pindah Aplikasi Luar (dengan Pengecualian iFrame)
-window.addEventListener("blur", function() {
-    setTimeout(function() {
-        const frame = document.getElementById('formFrame');
-        // Jika yang memegang fokus kursor adalah iFrame Google Form, maka ABAIKAN (bukan curang)
-        if (document.activeElement === frame) {
-            return; 
-        }
-        // Jika kursor lepas dan yang aktif BUKAN iframe, berarti siswa Alt+Tab!
-        tanganiSiswaPindahAplikasi();
-    }, 100);
-});
-
-// 3. Otomatis tarik ke fullscreen saat browser kembali diklik
-window.addEventListener("focus", function() {
-    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
-    if (sedangUjian && statusProteksiFullscreen === "YA") {
-        kunciLayarPenuhInstan();
+// DETEKTOR 2: Jika siswa pindah tab / memperkecil browser
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) {
+        tanganiPelanggaranSiswa();
     }
 });
 </script>
