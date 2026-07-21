@@ -157,6 +157,18 @@
         .custom-modal-box h4 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
         .custom-modal-box p { font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 20px; word-break: break-word; }
         @keyframes pulse-anim { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; transform: scale(1.05); } }
+        /* Mencegah aksi pull-to-refresh dan gestur tarik browser di HP */
+html, body {
+    overscroll-behavior-y: contain;
+    touch-action: manipulation;
+    -webkit-touch-callout: none; /* Matikan menu tahan-klik di HP */
+    -webkit-user-select: none;   /* Matikan blok teks di luar iframe */
+    user-select: none;
+}
+
+#formFrame {
+    touch-action: auto; /* Tetap izinkan scroll normal di dalam Google Form */
+}
     </style>
 </head>
 <body>
@@ -1487,6 +1499,7 @@ async function kunciLayarDanKeyboard() {
 function prosesMasukLembarSoal(ujian) {
     if (statusProteksiFullscreen === "YA") {
         kunciLayarDanKeyboard();
+        kunciTombolBackHP();
     }
 
     var idEntryNama = ujian.entryNama || "entry.123456789";  
@@ -1569,6 +1582,42 @@ document.addEventListener("visibilitychange", function() {
         tanganiPelanggaranSiswa();
     }
 });
+    // =========================================================================
+// ANTI CHEAT KHUSUS HP (MOBILE FULLSCREEN & GESTURE LOCK)
+// =========================================================================
+
+// 1. KUNCI TOMBOL "BACK" BAWAAN HP/ANDROID
+function kunciTombolBackHP() {
+    window.history.pushState(null, "", window.location.href);
+    window.onpopstate = function () {
+        const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+        if (sedangUjian && statusProteksiFullscreen === "YA") {
+            window.history.pushState(null, "", window.location.href);
+            // Panggil konfirmasi pelanggaran layaknya tombol ESC di laptop
+            tanganiPelanggaranSiswa();
+        }
+    };
+}
+
+// 2. DETEKSI SWIPE NOTIFIKASI / KELUAR FOKUS DI HP (PAGE VISIBILITY)
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) {
+        tanganiPelanggaranSiswa();
+    }
+});
+
+// 3. PAKSA FULLSCREEN INSTAN SAAT SISWA KEMBALI SENTUH LAYAR HP
+window.addEventListener("touchend", function() {
+    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+    const isNotFullscreen = !document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement;
+    
+    if (sedangUjian && statusProteksiFullscreen === "YA" && isNotFullscreen) {
+        kunciLayarDanKeyboard();
+    }
+});
+
+// 4. CEGAH PULL-TO-REFRESH (TARIK LAYAR KE BAWAH UNTUK REFRESH DI HP)
+document.body.style.overscrollBehaviorY = 'contain';
 </script>
 </body>
 </html>
