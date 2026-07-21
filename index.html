@@ -1220,8 +1220,10 @@ function handleSearchSiswa() {
         });
     }
 
-    // DETEKTOR KELUAR FULLSCREEN (HANYA MENGHUKUM JIKA DISETEL "YA" OLEH ADMIN)
-    function deteksiPerubahanLayar() {
+    // =========================================================================
+// ATURAN 1: KELUAR FULLSCREEN / ESC (DIBERI PILIHAN KONFIRMASI)
+// =========================================================================
+function deteksiPerubahanLayar() {
     const isNotFullscreen = !document.fullscreenElement && 
                             !document.webkitFullscreenElement && 
                             !document.msFullscreenElement;
@@ -1229,19 +1231,11 @@ function handleSearchSiswa() {
     const sedangUjian = document.getElementById('examArea').style.display === 'flex';
 
     if (isNotFullscreen && sedangUjian && statusProteksiFullscreen === "YA") {
-        
-        // 1. LANGSUNG PAKSA KEMBALI KE FULLSCREEN DALAM FRAKSI DETIK (TUTUP CELAH TAB)
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-
-        // 2. SEMBUNYIKAN SOAL SEMENTARA
+        // Sembunyikan lembar soal sementara agar tidak diintip
         document.getElementById('formFrame').style.visibility = "hidden";
         
-        // 3. TAMPILKAN MODAL KONFIRMASI DALAM KONDISI TETAP FULLSCREEN
         tampilkanNotifikasi(
-            "🚨 Peringatan: Terdeteksi upaya menekan ESC / keluar layar penuh. Apakah Anda yakin ingin menghentikan dan keluar dari ujian?", 
+            "Anda menekan ESC atau keluar dari mode Layar Penuh. Apakah Anda benar-benar ingin menghentikan dan keluar dari sesi ujian ini?", 
             "warning", 
             "Konfirmasi Keluar Ujian", 
             false
@@ -1263,26 +1257,75 @@ function handleSearchSiswa() {
         `;
         modalBox.appendChild(boxOpsi);
 
-        // OPSI A: Selesai & Keluar Sesi
+        // OPSI A: Ya, Keluar Sesi
         document.getElementById('btnKonfirmasiKeluar').onclick = function() {
             boxOpsi.remove();
             if (siswaExamInterval) clearInterval(siswaExamInterval);
             window.location.reload();
         };
 
-        // OPSI B: Lanjut Ujian (Layar Soal Dibuka Kembali)
+        // OPSI B: Tidak, Kembali Fullscreen & Lanjut Ujian
         document.getElementById('btnKonfirmasiLanjut').onclick = function() {
             boxOpsi.remove();
             tutupNotifikasi();
             document.getElementById('formFrame').style.visibility = "visible";
+            kunciLayarDanKeyboard();
         };
     }
 }
 
-    // Pasang event listener browser
-    document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
-    document.addEventListener('webkitfullscreenchange', deteksiPerubahanLayar);
-    document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
+// =========================================================================
+// ATURAN 2: PELANGGARAN BERAT (ALT+TAB / BUKA WA / NOTIFIKASI HP / PINDAH TAB)
+// LANGSUNG DI-LOGOUT & DISKUALIFIKASI OTOMATIS!
+// =========================================================================
+function eksekusiLogoutOtomatis() {
+    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+
+    if (sedangUjian && statusProteksiFullscreen === "YA") {
+        if (siswaExamInterval) clearInterval(siswaExamInterval);
+        document.getElementById('formFrame').src = "";
+        document.getElementById('examArea').style.display = 'none';
+        
+        tampilkanNotifikasi(
+            "🚨 PELANGGARAN TERDETEKSI! Anda berpindah aplikasi / membuka tab/notifikasi lain. Sesi ujian Anda dibatalkan otomatis dan Anda dikeluarkan dari sistem.", 
+            "danger", 
+            "Diskualifikasi Sesi", 
+            true
+        );
+
+        document.getElementById('btnModalClose').innerText = "Kembali ke Login";
+        document.getElementById('btnModalClose').onclick = function() {
+            window.location.reload();
+        };
+
+        // Otomatis reload ke halaman login dalam 3 detik
+        setTimeout(function() {
+            window.location.reload();
+        }, 3000);
+    }
+}
+
+// Pasang event listener browser
+document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
+document.addEventListener('webkitfullscreenchange', deteksiPerubahanLayar);
+document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
+
+// Pasang pendeteksi Pindah Tab / Pindah Aplikasi (Android, iOS, Laptop)
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) {
+        eksekusiLogoutOtomatis();
+    }
+});
+
+// Pasang pendeteksi Alt+Tab / Buka Aplikasi Windows Lain
+window.addEventListener("blur", function() {
+    setTimeout(function() {
+        const frame = document.getElementById('formFrame');
+        if (document.activeElement !== frame) {
+            eksekusiLogoutOtomatis();
+        }
+    }, 100);
+});
 
     let siswaExamInterval = null; 
     let statusKritisSiswa = false;
