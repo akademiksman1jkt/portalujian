@@ -170,6 +170,15 @@
         #formFrame {
             touch-action: auto;
         }
+        button:disabled, 
+.btn:disabled {
+    background-color: #a0a0a0 !important; /* Mengubah warna background jadi abu-abu */
+    color: #ffffff !important;            /* Warna teks */
+    cursor: not-allowed !important;        /* Mengubah kursor panah menjadi tanda dilarang */
+    opacity: 0.6 !important;               /* Memberikan efek transparan/blur/redup */
+    box-shadow: none !important;           /* Menghilangkan efek bayangan tombol */
+    transform: none !important;            /* Menghilangkan efek animasi tekan */
+}
     </style>
 </head>
 <body>
