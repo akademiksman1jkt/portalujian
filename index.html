@@ -1518,7 +1518,7 @@ function tanganiSiswaPindahAplikasi() {
 }
 
 // =========================================================================
-// ANTI CHEAT: DETEKSI ALT+TAB / PINDAH APLIKASI (PERBAIKAN BENTROK IFRAME GFORM)
+// ANTI CHEAT PINTAR: DETEKSI ALT+TAB TANPA TERPENGARUH KLIK IFRAME GFORM
 // =========================================================================
 function tanganiSiswaPindahAplikasi() {
     const sedangUjian = document.getElementById('examArea').style.display === 'flex';
@@ -1528,9 +1528,9 @@ function tanganiSiswaPindahAplikasi() {
         // 1. Sembunyikan lembar soal secara instan
         document.getElementById('formFrame').style.visibility = "hidden";
 
-        // 2. Tampilkan Notifikasi Peringatan Pindah Aplikasi
+        // 2. Tampilkan Notifikasi Peringatan
         tampilkanNotifikasi(
-            "🚨 Terdeteksi aktivitas berpindah tab atau keluar dari halaman ujian! Klik tombol di bawah untuk kembali mengunci layar ujian.", 
+            "🚨 Terdeteksi aktivitas berpindah aplikasi/tab! Klik tombol di bawah untuk melanjutkan ujian.", 
             "danger", 
             "Pelanggaran Terdeteksi", 
             false
@@ -1552,22 +1552,18 @@ function tanganiSiswaPindahAplikasi() {
         `;
         modalBox.appendChild(boxOpsi);
 
-        // OPSI A: Jika pilih keluar
+        // OPSI A: Keluar Ujian
         document.getElementById('btnKonfirmasiKeluar').onclick = function() {
             boxOpsi.remove();
             if (siswaExamInterval) clearInterval(siswaExamInterval);
             window.location.reload();
         };
 
-        // OPSI B: Jika pilih kembali ke ujian
+        // OPSI B: Kembali & Kunci Layar Penuh Lagi
         document.getElementById('btnKonfirmasiLanjut').onclick = function() {
             boxOpsi.remove();
             tutupNotifikasi();
-            
-            // Tampilkan soal kembali
             document.getElementById('formFrame').style.visibility = "visible";
-            
-            // Kunci layar penuh lagi
             kunciLayarPenuhInstan();
         };
     }
@@ -1580,14 +1576,27 @@ function kunciLayarPenuhInstan() {
     else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
 }
 
-// AMAN: Hanya terdeteksi jika siswa benar-benar berpindah tab browser atau meminimalkan browser
+// 1. Deteksi saat pindah TAB browser
 document.addEventListener("visibilitychange", function() {
     if (document.hidden) {
         tanganiSiswaPindahAplikasi();
     }
 });
 
-// Otomatis tarik kembali ke fullscreen saat siswa kembali fokus ke browser
+// 2. Deteksi saat ALT+TAB / Pindah Aplikasi Luar (dengan Pengecualian iFrame)
+window.addEventListener("blur", function() {
+    setTimeout(function() {
+        const frame = document.getElementById('formFrame');
+        // Jika yang memegang fokus kursor adalah iFrame Google Form, maka ABAIKAN (bukan curang)
+        if (document.activeElement === frame) {
+            return; 
+        }
+        // Jika kursor lepas dan yang aktif BUKAN iframe, berarti siswa Alt+Tab!
+        tanganiSiswaPindahAplikasi();
+    }, 100);
+});
+
+// 3. Otomatis tarik ke fullscreen saat browser kembali diklik
 window.addEventListener("focus", function() {
     const sedangUjian = document.getElementById('examArea').style.display === 'flex';
     if (sedangUjian && statusProteksiFullscreen === "YA") {
