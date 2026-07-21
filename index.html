@@ -1228,69 +1228,89 @@
     const listEvolusiNormal = ["🥚", "👾", "🦊", "🤖", "🐉"];
     const namaLevelNormal = ["Lv.1 Slime Egg", "Lv.2 Baby Alien", "Lv.3 Cyber Fox", "Lv.4 Mecha Golem", "Lv.5 Omega Dragon! 🔥"];
 
-    function jalankanTimerUjianSiswa(durasiMenit) {
-        if (siswaExamInterval) clearInterval(siswaExamInterval);
-        
-        let totalDetikSiswa = durasiMenit * 60; 
-        const displayTimer = document.getElementById('timerUjianSiswa');
-        const boxTimer = document.getElementById('boxTimerSiswa');
-        const ikon = document.getElementById('ikonMonster');
-        const teksLevel = document.getElementById('levelMonster');
-
-        boxTimer.classList.remove('kritis-tamagotchi');
-        hitungKlikMonster = 0;
-        statusSedangAnimasi = false;
-        statusKritisSiswa = false;
-        
-        ikon.innerText = listEvolusiNormal[0];
-        teksLevel.innerText = namaLevelNormal[0];
-        ikon.style.animation = "monsterSantai 0.6s infinite alternate ease-in-out";
-
-        siswaExamInterval = setInterval(function() {
-            totalDetikSiswa--;
-
-            let jam = Math.floor(totalDetikSiswa / 3600);
-            let sisaDetik = totalDetikSiswa % 3600;
-            let menit = Math.floor(sisaDetik / 60);
-            let detik = sisaDetik % 60;
-
-            let teksJam = jam < 10 ? "0" + jam : jam;
-            let teksMenit = menit < 10 ? "0" + menit : menit;
-            let teksDetik = detik < 10 ? "0" + detik : detik;
-
-            displayTimer.innerHTML = `Sisa Waktu: <strong style="color:#ffffff; font-size:16px;">${teksJam}:${teksMenit}:${teksDetik}</strong>`;
-
-            if (totalDetikSiswa <= 300 && totalDetikSiswa > 0) {
-                statusKritisSiswa = true;
-                boxTimer.classList.add('kritis-tamagotchi');
-                displayTimer.style.color = "#ff6b6b";
-                teksLevel.innerText = "🚨 DANGER: CRITICAL TIME!!";
-                teksLevel.style.color = "#ff6b6b";
-                
-                if (!statusSedangAnimasi) {
-                    ikon.innerText = (detik % 2 === 0) ? "👹" : "🔥";
-                    ikon.style.animation = "monsterPanik 0.1s infinite linear";
-                }
-            } else {
-                if (!statusSedangAnimasi) {
-                    let indexWujud = Math.min(Math.floor(hitungKlikMonster / 5), listEvolusiNormal.length - 1);
-                    ikon.innerText = listEvolusiNormal[indexWujud];
-                    teksLevel.innerText = namaLevelNormal[indexWujud];
-                    teksLevel.style.color = "rgba(255,255,255,0.8)";
-                }
-            }
-
-            if (totalDetikSiswa <= 0) {
-                clearInterval(siswaExamInterval);
-                document.getElementById('formFrame').src = "";
-                document.getElementById('examArea').style.display = 'none';
-                document.getElementById('mainContainer').classList.remove('fullscreen');
-                
-                tampilkanNotifikasi("💥 GAME OVER! Batas waktu pengerjaan telah habis.", "danger", "Waktu Habis", true);
-                document.getElementById('btnModalClose').onclick = function() { window.location.reload(); };
-            }
-        }, 1000);
+    function jalankanTimerUjianSiswa(durasiMenit, idUjian) {
+    if (siswaExamInterval) clearInterval(siswaExamInterval);
+    
+    const keyStorage = "targetSelesaiUjian_" + (sessionData.username || "siswa") + "_" + idUjian;
+    
+    // 1. Cek apakah ada riwayat sisa waktu dari Google Sheets (Kolom T)
+    let sisaDetikServer = null;
+    if (sessionData.waktuTersimpanSiswa && sessionData.waktuTersimpanSiswa[idUjian]) {
+        sisaDetikServer = sessionData.waktuTersimpanSiswa[idUjian].sisaDetik;
     }
+
+    let targetWaktuSelesai = localStorage.getItem(keyStorage);
+    const waktuSekarangMs = new Date().getTime();
+
+    if (!targetWaktuSelesai) {
+        // Jika di Google Sheets ada sisa waktu tersimpan, pakai sisa waktu tersebut!
+        if (sisaDetikServer !== null && sisaDetikServer > 0) {
+            targetWaktuSelesai = waktuSekarangMs + (sisaDetikServer * 1000);
+        } else {
+            targetWaktuSelesai = waktuSekarangMs + (durasiMenit * 60 * 1000);
+        }
+        localStorage.setItem(keyStorage, targetWaktuSelesai);
+    } else {
+        targetWaktuSelesai = parseInt(targetWaktuSelesai);
+    }
+
+    let counterSyncSheet = 0;
+
+    siswaExamInterval = setInterval(function() {
+        const sekarang = new Date().getTime();
+        let totalDetikSiswa = Math.floor((targetWaktuSelesai - sekarang) / 1000);
+
+        let jam = Math.floor(totalDetikSiswa / 3600);
+        let sisaDetik = totalDetikSiswa % 3600;
+        let menit = Math.floor(sisaDetik / 60);
+        let detik = sisaDetik % 60;
+
+        let teksJam = jam < 10 ? "0" + jam : jam;
+        let teksMenit = menit < 10 ? "0" + menit : menit;
+        let teksDetik = detik < 10 ? "0" + detik : detik;
+
+        const displayTimer = document.getElementById('timerUjianSiswa');
+        if (displayTimer && totalDetikSiswa > 0) {
+            displayTimer.innerHTML = `Sisa Waktu: <strong style="color:#ffffff; font-size:16px;">${teksJam}:${teksMenit}:${teksDetik}</strong>`;
+        }
+
+        // 2. OTOMATIS SIMPAN KE GOOGLE SHEETS SETIAP 15 DETIK
+        counterSyncSheet++;
+        if (counterSyncSheet >= 15 && totalDetikSiswa > 0) {
+            counterSyncSheet = 0;
+            kirimProgresWaktuKeSheet(idUjian, totalDetikSiswa);
+        }
+
+        // FASE WAKTU HABIS
+        if (totalDetikSiswa <= 0) {
+            clearInterval(siswaExamInterval);
+            localStorage.removeItem(keyStorage);
+            kirimProgresWaktuKeSheet(idUjian, 0); // Catat 0 detik ke GSheet
+            
+            document.getElementById('formFrame').src = "";
+            document.getElementById('examArea').style.display = 'none';
+            document.getElementById('mainContainer').classList.remove('fullscreen');
+            
+            tampilkanNotifikasi("💥 Batas waktu pengerjaan telah habis.", "danger", "Waktu Habis", true);
+            document.getElementById('btnModalClose').onclick = function() { window.location.reload(); };
+        }
+    }, 1000);
+}
+
+// Fungsi pembantu untuk mengirim sisa detik ke Apps Script
+function kirimProgresWaktuKeSheet(idUjian, sisaDetik) {
+    const dataForm = new URLSearchParams();
+    dataForm.append("action", "simpanWaktuSiswa");
+    dataForm.append("username", sessionData.username || document.getElementById('username').value.trim());
+    dataForm.append("idUjian", idUjian);
+    dataForm.append("sisaDetik", sisaDetik);
+
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: dataForm
+    }).catch(err => console.warn("Gagal kirim waktu ke Sheet:", err));
+}
 
     function interaksiMonster() {
         if (statusSedangAnimasi) return;
