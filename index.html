@@ -1189,36 +1189,84 @@
         }
     }
 
-    function konfirmasiKeluarUjian() {
-        deteksiPerubahanLayar();
-    }
+    // =========================================================================
+// 1. FUNGSI TOMBOL KELUAR UJIAN (SUDAH DIPERBAIKI)
+// =========================================================================
+function konfirmasiKeluarUjian() {
+    // Sembunyikan lembar soal sementara agar tidak diintip
+    const frame = document.getElementById('formFrame');
+    if (frame) frame.style.visibility = "hidden";
+    
+    // Tampilkan Modal Konfirmasi
+    tampilkanNotifikasi(
+        "Apakah Anda yakin ingin keluar dari lembar ujian ini? Pastikan Anda sudah menekan tombol SUBMIT di dalam lembar soal terlebih dahulu.", 
+        "warning", 
+        "Konfirmasi Keluar Ujian", 
+        false
+    );
 
-    // LISTENER DETEKTOR
-    document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
-    document.addEventListener('webkitfullscreenchange', deteksiPerubahanLayar);
-    document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
+    const modalBox = document.querySelector('.custom-modal-box');
+    const opsiLama = document.getElementById('boxOpsiKeluar');
+    if (opsiLama) opsiLama.remove();
 
-    document.addEventListener("visibilitychange", function() {
-        if (document.hidden) { eksekusiLogoutOtomatis(); }
-    });
+    const boxOpsi = document.createElement('div');
+    boxOpsi.id = "boxOpsiKeluar";
+    boxOpsi.style.display = "flex";
+    boxOpsi.style.gap = "12px";
+    boxOpsi.style.marginTop = "20px";
 
-    window.addEventListener("blur", function() {
-        setTimeout(function() {
-            const frame = document.getElementById('formFrame');
-            if (document.activeElement !== frame) {
-                eksekusiLogoutOtomatis();
-            }
-        }, 100);
-    });
+    boxOpsi.innerHTML = `
+        <button class="btn btn-danger" id="btnKonfirmasiKeluar" style="flex:1;">Ya, Keluar Ujian</button>
+        <button class="btn btn-success" id="btnKonfirmasiLanjut" style="flex:1;">Tidak, Lanjut Ujian</button>
+    `;
+    modalBox.appendChild(boxOpsi);
 
-    window.addEventListener("touchend", function() {
-        const sedangUjian = document.getElementById('examArea').style.display === 'flex';
-        const isNotFullscreen = !document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement;
-        
-        if (sedangUjian && statusProteksiFullscreen === "YA" && isNotFullscreen) {
+    // OPSI YA: Keluar Sesi & Refresh Halaman
+    document.getElementById('btnKonfirmasiKeluar').onclick = function() {
+        boxOpsi.remove();
+        if (siswaExamInterval) clearInterval(siswaExamInterval);
+        window.location.reload();
+    };
+
+    // OPSI TIDAK: Kembali Buka Soal & Kunci Layar Kembali
+    document.getElementById('btnKonfirmasiLanjut').onclick = function() {
+        boxOpsi.remove();
+        tutupNotifikasi();
+        if (frame) frame.style.visibility = "visible";
+        if (typeof kunciLayarDanKeyboard === "function") {
             kunciLayarDanKeyboard();
         }
-    });
+    };
+}
+
+// =========================================================================
+// 2. LISTENER DETEKTOR ANTI-CHEAT (TETAP SESUAI KODE ANDA)
+// =========================================================================
+document.addEventListener('fullscreenchange', deteksiPerubahanLayar);
+document.addEventListener('webkitfullscreenchange', deteksiPerubahanLayar);
+document.addEventListener('msfullscreenchange', deteksiPerubahanLayar);
+
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) { eksekusiLogoutOtomatis(); }
+});
+
+window.addEventListener("blur", function() {
+    setTimeout(function() {
+        const frame = document.getElementById('formFrame');
+        if (document.activeElement !== frame) {
+            eksekusiLogoutOtomatis();
+        }
+    }, 100);
+});
+
+window.addEventListener("touchend", function() {
+    const sedangUjian = document.getElementById('examArea').style.display === 'flex';
+    const isNotFullscreen = !document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement;
+    
+    if (sedangUjian && statusProteksiFullscreen === "YA" && isNotFullscreen) {
+        kunciLayarDanKeyboard();
+    }
+});
 
     // GAME TAMAGOTCHI TIMER
     let statusKritisSiswa = false;
