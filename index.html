@@ -502,6 +502,9 @@
         const maxAttempts = 5;
 
         function kirimPermintaanLogin() {
+            // 📍 TAMBAHAN L2: Langsung matikan tombol di awal agar tidak bisa diklik ganda
+            if (btnSubmit) btnSubmit.disabled = true;
+
             attempt++;
             loadingDiv.innerText = attempt > 1 ? `Server sibuk, mencoba kembali (${attempt}/${maxAttempts})...` : "Memuat ...";
 
@@ -516,9 +519,9 @@
             })
             .then(res => {
                 loadingDiv.style.display = 'none';
-                btnSubmit.disabled = false;
 
                 if(res.success) {
+                    // Login Sukses - Biarkan tombol tetap disabled karena layar berpindah
                     document.getElementById('loginArea').style.display = 'none';
                     sessionData = res;
                     
@@ -544,6 +547,8 @@
                         }
                     }
                 } else { 
+                    // Login Gagal (Username/Password Salah) - Hidupkan kembali tombolnya!
+                    btnSubmit.disabled = false; 
                     errDiv.style.display = 'block'; 
                     errDiv.innerText = "Username atau Password salah!";
                 }
@@ -553,7 +558,7 @@
                     setTimeout(kirimPermintaanLogin, Math.floor(Math.random() * 2500) + 1500);
                 } else {
                     loadingDiv.style.display = 'none';
-                    btnSubmit.disabled = false;
+                    btnSubmit.disabled = false; // Hidupkan kembali tombol jika kuota percobaan habis
                     errDiv.style.display = 'block';
                     errDiv.innerText = "Koneksi server padat. Silakan coba lagi.";
                 }
